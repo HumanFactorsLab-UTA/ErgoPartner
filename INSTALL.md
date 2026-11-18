@@ -56,18 +56,18 @@ The quick start uses the sibling `studies` folder. To select another library, op
 
 ### Optional local AI with Ollama
 
-Install Ollama for Windows and open a new PowerShell window. The default app endpoint is `http://127.0.0.1:11434/v1`. The configured model is `gemma4:26b`. A smaller local vision option is `gemma4:e4b`. [Ollama for Windows](https://ollama.com/download/windows) · [Ollama system requirements](https://docs.ollama.com/windows)
+Install Ollama for Windows and open a new PowerShell window. The default app endpoint is `http://127.0.0.1:11434/v1`. Use the configured `gemma4:26b` model for the initial check. [Ollama for Windows](https://ollama.com/download/windows) · [Ollama system requirements](https://docs.ollama.com/windows)
 
 ```powershell
 ollama --version
-ollama pull gemma4:e4b
+ollama pull gemma4:26b
 ollama list
 (Invoke-RestMethod http://127.0.0.1:11434/api/tags).models.name
 ```
 
 In **Settings → Local vision model**, choose **Refresh models**, select the installed tag, and choose **Save defaults**. Open an assessment with eligible frames and request a visual interpretation. Compare its observations with the footage. Assessment chat also needs model tool support.
 
-On the release workstation, the installed model files occupied about 8.9 GiB for `gemma4:e4b` and 16.8 GiB for `gemma4:26b`. These are disk sizes. Available memory and context size affect inference speed and whether the model can load. An external endpoint receives the frames and assessment information sent to it. Use an endpoint authorized for your study.
+On the release workstation, `gemma4:26b` correctly recognized the shapes and colors of two synthetic images sent through the app. Its installed files occupied about 16.8 GiB on disk. The smaller `gemma4:e4b` tag (about 8.9 GiB on disk) appeared in the model selector but misidentified both images. Use the larger tested model for this release and inspect the source footage for every interpretation. This check only verified basic image handling. Available memory and context size affect inference speed and whether the model can load. An external endpoint receives the frames and assessment information sent to it. Use an endpoint authorized for your study.
 
 ### Troubleshooting
 
@@ -79,7 +79,7 @@ On the release workstation, the installed model files occupied about 8.9 GiB for
 | Port 8000 is busy | Save active work and stop the instance that owns the port using its own stop script. Launch from the desired release folder. |
 | Model download fails | Check network access to the configured model source and retry. Preserve the expected checksum in the release configuration. |
 | No Ollama models appear | Start Ollama, check the local API and `ollama list`, and refresh models in Settings. |
-| The AI model exceeds available memory | Select a smaller installed vision model or continue with core screening while Ollama is offline. |
+| The AI model exceeds available memory | Continue with core screening while Ollama is offline. Before using an alternative vision model for evaluation, verify its responses against known images. |
 
 ### Command line and developer checks
 
