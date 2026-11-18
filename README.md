@@ -1,11 +1,13 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/ergopartner-horizontal-dark.svg">
-  <img src="web/public/brand/ergopartner-horizontal.svg" alt="ErgoPartner" width="310">
-</picture>
+<h1>
+  <picture>
+    <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="web/public/brand/ergopartner-horizontal-dark.svg">
+    <source media="(prefers-reduced-motion: reduce)" srcset="web/public/brand/ergopartner-horizontal.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/ergopartner-reveal-dark.svg">
+    <img src="web/public/brand/ergopartner-reveal.svg" alt="ErgoPartner" width="100%">
+  </picture>
+</h1>
 
-# ErgoPartner
-
-ErgoPartner is a local Windows application for studying how people move during work tasks. Import a recording or capture a task with a camera, examine joint angles at a specific moment, and trace an ergonomic screening score back to the posture and task conditions that produced it. A study can contain multiple participants and named tasks. Each task can have one recording or up to three synchronized views.
+ErgoPartner helps researchers study working posture from video. Record or import a task, find the frame with the highest RULA or REBA score, and inspect the joint angles and task conditions behind it. The Windows application runs locally and supports up to three synchronized views of a task.
 
 **Download and use version 5.1.0 for noncommercial research or evaluation without prior approval.** Repurposing, commercial use and deployment outside that scope require written permission from the research team. [Download the project ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.0/ErgoPartner-5.1.0.zip) · [Release notes and checksum](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.0) · [Windows installation](INSTALL.md) · [License](LICENSE) · [Other uses and contact](USE_POLICY.md)
 
