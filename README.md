@@ -11,14 +11,17 @@ ErgoPartner helps researchers study working posture from video. Record or import
 
 **Download and use version 5.1.0 for noncommercial research or evaluation without prior approval.** Repurposing, commercial use and deployment outside that scope require written permission from the research team. [Download the project ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.0/ErgoPartner-5.1.0.zip) · [Release notes and checksum](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.0) · [Windows installation](INSTALL.md) · [License](LICENSE) · [Other uses and contact](USE_POLICY.md)
 
+<picture>
+  <source media="(max-width: 767px)" srcset="docs/features-mobile.webp">
+  <img src="docs/features.webp" width="100%" alt="ErgoPartner features. Record or import up to three synchronized views. Review pose overlays, joint angles, RULA scores (1–7), REBA scores (1–15) and eligible lifts. Track exposure over time, organize studies, export PDF reports, access CSV and JSONL frame data, and use optional local Ollama models for visual review. The pose and score trace are illustrations.">
+</picture>
+
 ## Start your first assessment
 
 1. Install **64-bit Python 3.12.x**, **Node.js 22 or newer with npm**, and **FFmpeg**. Extract the release and follow the PowerShell setup to launch the local dashboard. Core video analysis runs on CPU. Ollama is optional. [Installation and troubleshooting](INSTALL.md)
 2. On **Home**, choose **Analyze recorded video** or **Record live**. Select a study, participant and task. For multiple cameras, use synchronized views of the same person and task.
 3. Review the load, coupling and other task conditions before running analysis. The default `standing_light_work` profile can supply **0 kg handled load and good coupling**. Replace those assumptions with the observed values when appropriate. [Configuration](config.yaml)
 4. Open **Summary** to find the highest scored posture. In **Posture review**, inspect its timestamp, camera evidence and inputs. Save your findings and export a PDF from **Findings & report**.
-
-![Assessment library showing a synthetic packing study and named tasks](docs/assessment-library.png)
 
 ## How video becomes a score
 
