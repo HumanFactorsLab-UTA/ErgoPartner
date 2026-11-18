@@ -21,12 +21,15 @@ import argparse
 import json
 import logging
 import shutil
+import tempfile
 from datetime import date
+from html import escape
 from pathlib import Path
 
 import pandas as pd
 
 from validation import build_expert_package, build_reference_doc
+from validation.package_output import publish_directory, require_new_output
 
 LOGGER = logging.getLogger("validation.assemble_delivery")
 
@@ -39,8 +42,6 @@ DEFAULT_RATERS = ["R01", "R02", "R03", "R04", "R05"]
 PRIVATE_FILES = (
     "ground_truth_key.csv",
     "sampling_manifest.json",
-    "package_item_ledger.csv",
-    "workbook_sheet_map.csv",
 )
 
 
@@ -48,7 +49,7 @@ class DeliveryError(RuntimeError):
     """Raised when the delivery cannot be assembled."""
 
 
-def _start_here(raters: list[str], frames: int, repeats: int, key: pd.DataFrame) -> str:
+def _start_here(raters: list[str], frames: int, repeats: int, analysis_command: str) -> str:
     reviewer_rows = "\n".join(
         f"        <tr><td><code>{r}</code></td>"
         f"<td>scoring_workbook_{r}.xlsx</td><td></td></tr>"
@@ -145,7 +146,7 @@ standard the automated assessment is measured against. Built {date.today().isofo
   <p>Drop every returned file into <code>3_when_ratings_return/returned/</code> — the
   <code>.json</code> exports from the rating page and the <code>.xlsx</code> workbooks can
   sit side by side. Then run:</p>
-  <pre>python -m validation.analyze_ratings --ratings validation_sample/delivery/3_when_ratings_return/returned/ --output agreement_report.md</pre>
+  <pre>{escape(analysis_command)}</pre>
   <p>The report gives, in order: agreement between the reviewers themselves; the pipeline
   against the reviewer consensus, reported balanced, re-weighted to the population, and
   split by stratum; and a per-component breakdown showing which body segment any
@@ -312,10 +313,35 @@ def assemble(
         raise DeliveryError(
             f"{key_path} not found — run `python -m validation.sample_frames --allow-seek` first"
         )
-    key = pd.read_csv(key_path)
+    require_new_output(delivery_dir)
+    delivery_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=delivery_dir.parent, prefix=".delivery-") as temporary:
+        staged = Path(temporary) / "delivery"
+        _write_delivery(
+            sample_dir, staged, raters, repeats, seed, randomise_order,
+            pd.read_csv(key_path), _analysis_command(delivery_dir),
+        )
+        publish_directory(staged, delivery_dir)
+    LOGGER.info("Delivery assembled at %s", delivery_dir)
+    return delivery_dir
 
-    if delivery_dir.exists():
-        shutil.rmtree(delivery_dir)
+
+def _analysis_command(delivery: Path) -> str:
+    def quote(path: Path) -> str:
+        return "'" + str(path.resolve()).replace("'", "''") + "'"
+
+    results = delivery / "3_when_ratings_return"
+    return (
+        f"python -m validation.analyze_ratings --ratings {quote(results / 'returned')} "
+        f"--key {quote(delivery / '2_keep_private' / 'ground_truth_key.csv')} "
+        f"--output {quote(results / 'agreement_report.md')}"
+    )
+
+
+def _write_delivery(
+    sample_dir: Path, delivery_dir: Path, raters: list[str], repeats: int,
+    seed: int, randomise_order: bool, key: pd.DataFrame, analysis_command: str,
+) -> None:
     send = delivery_dir / "1_send_to_reviewers"
     private = delivery_dir / "2_keep_private"
     returned = delivery_dir / "3_when_ratings_return" / "returned"
@@ -323,7 +349,7 @@ def assemble(
         folder.mkdir(parents=True, exist_ok=True)
 
     LOGGER.info("Building the reviewer package for %d reviewer(s)", len(raters))
-    build_expert_package.build_package(
+    build_expert_package.write_package_files(
         sample_dir=sample_dir,
         package_dir=send / "expert_package",
         repeats=repeats,
@@ -331,6 +357,7 @@ def assemble(
         make_zip=True,
         raters=raters,
         randomise_order=randomise_order,
+        ledger_dir=private,
     )
 
     LOGGER.info("Building the reference document")
@@ -344,20 +371,15 @@ def assemble(
 
     (returned / "PUT_RETURNED_FILES_HERE.txt").write_text(
         "Drop every returned file here — .json exports from the rating page and .xlsx\n"
-        "workbooks can sit side by side. Then run, from the project root:\n\n"
-        "  python -m validation.analyze_ratings "
-        "--ratings validation_sample/delivery/3_when_ratings_return/returned/ "
-        "--output agreement_report.md\n",
+        "workbooks can sit side by side. From the project root in PowerShell, run:\n\n"
+        f"  {analysis_command}\n",
         encoding="utf-8",
     )
 
     frames = int(key["frame_id"].nunique())
     (delivery_dir / "START_HERE.html").write_text(
-        _start_here(raters, frames, repeats, key), encoding="utf-8"
+        _start_here(raters, frames, repeats, analysis_command), encoding="utf-8"
     )
-
-    LOGGER.info("Delivery assembled at %s", delivery_dir)
-    return delivery_dir
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -365,7 +387,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--sample-dir", type=Path, default=DEFAULT_SAMPLE_DIR)
-    parser.add_argument("--delivery-dir", type=Path, default=DEFAULT_DELIVERY_DIR)
+    parser.add_argument(
+        "--delivery-dir", type=Path, default=DEFAULT_DELIVERY_DIR,
+        help="new directory to create for this delivery",
+    )
     parser.add_argument("--raters", default=",".join(DEFAULT_RATERS))
     parser.add_argument(
         "--repeats", type=int, default=build_expert_package.DEFAULT_REPEATS,
@@ -394,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
             args.sample_dir, args.delivery_dir, raters, args.repeats, args.seed,
             args.randomise_order,
         )
-    except (DeliveryError, build_expert_package.PackageError,
+    except (FileExistsError, DeliveryError, build_expert_package.PackageError,
             build_reference_doc.ReferenceError) as exc:
         LOGGER.error("%s", exc)
         return 1

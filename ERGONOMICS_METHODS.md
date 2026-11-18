@@ -1,6 +1,6 @@
 # Scoring methods and measurement limits
 
-These notes describe the code shipped in version 5.1.0. RULA and REBA screen observed working postures. The Revised NIOSH Lifting Equation (RNLE) evaluates the demands of applicable lifting tasks. A posture score alone cannot establish whether a particular worker will suffer an injury.
+These notes describe the code shipped in version 5.1.1. RULA and REBA screen observed working postures. The Revised NIOSH Lifting Equation (RNLE) evaluates the demands of applicable lifting tasks. A posture score alone cannot establish whether a particular worker will suffer an injury.
 
 ## From landmarks to inputs
 

@@ -5,8 +5,16 @@ Prepare a blinded set of frames from your own processed studies, collect indepen
 ```bash
 python -m validation.sample_frames --allow-seek                              # draw the frames
 python -m validation.assemble_delivery --raters R01,R02,R03,R04,R05          # build everything
-python -m validation.analyze_ratings --ratings returned/ --output report.md  # when they come back
+python -m validation.analyze_ratings --ratings validation_sample/delivery/3_when_ratings_return/returned --key validation_sample/delivery/2_keep_private/ground_truth_key.csv --output report.md
 ```
+
+Each delivery uses a new directory. To prepare another package from the same sample,
+choose a new path with `--delivery-dir validation_sample/delivery_round_2`. Keep returned
+ratings with the delivery that produced the workbooks. Its `START_HERE.html` contains
+the analysis command for those ratings and their answer key. The standalone
+`build_expert_package` command also requires a new `--package-dir` and unused ZIP names.
+It reuses identical presentation maps in the sample directory. Use a separate delivery
+for a different reviewer list or order so each round keeps its corresponding maps.
 
 If confirmed reviewer identities follow `scoring_workbook_Rxx.xlsx` filenames, add
 `--rater-ids-from-filenames` to override an incorrect ID stored inside a workbook.

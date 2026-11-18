@@ -8,7 +8,9 @@ method adapters, bilateral calculators, temporal aggregation, and writers run.
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
+import pytest
 import yaml
 
 from core.pose_estimator import PoseLandmarks
@@ -154,6 +156,44 @@ def test_real_video_decode_through_bilateral_reports(monkeypatch, tmp_path):
     assert records[0]["rula"]["left"]["validity_status"] == "valid_with_limitations"
     assert records[-1]["timestamp_sec"] > records[0]["timestamp_sec"]
     assert (tmp_path / "ASSESSMENT_REPORT.md").is_file()
+
+
+@pytest.mark.parametrize(
+    ("source_fps", "target_fps", "start_frame", "stride"),
+    [(10, 10, 0, 1), (10, 5, 1, 2), (29.97, 14.985, 1, 2)],
+)
+def test_sampling_keeps_frames_at_interval_boundaries(
+    monkeypatch, tmp_path, source_fps, target_fps, start_frame, stride
+):
+    video = tmp_path / "one-pose.avi"
+    writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*"MJPG"), source_fps, (64, 48))
+    assert writer.isOpened()
+    for index in range(22):
+        writer.write(np.full((48, 64, 3), 255 if index == 7 else 0, dtype=np.uint8))
+    writer.release()
+
+    sampled = []
+
+    class MarkedFrameEstimator(FakePoseEstimator):
+        def process_frame_all(self, image, timestamp=0.0, frame_number=0):
+            sampled.append(frame_number)
+            return [_synthetic_pose(timestamp, frame_number)] if image.mean() > 200 else []
+
+    config = yaml.safe_load((PROJECT / "config.yaml").read_text(encoding="utf-8"))
+    config["video"].update(target_fps=target_fps, start_frame=start_frame)
+    config["hand"]["enabled"] = False
+    config["task_inputs"] = _complete_task_inputs()
+    processor = VideoProcessor(config)
+    monkeypatch.setattr(processor, "_create_pose_estimators", lambda count: [MarkedFrameEstimator()])
+    output = tmp_path / "results"
+    processor.process([str(video)], str(output))
+
+    assert sampled == list(range(start_frame, 22, stride))
+    records = (output / "frame_results.jsonl").read_text(encoding="utf-8").splitlines()
+    assert [json.loads(record)["frame_number"] for record in records] == [7]
+    summary = json.loads((output / "video_summary.json").read_text(encoding="utf-8"))
+    assert summary["method_completion"]["rula"]["scored_observations"] == 1
+    assert summary["method_completion"]["reba"]["scored_observations"] == 1
 
 
 def test_inclusive_frame_range_preserves_source_frame_numbers(monkeypatch, tmp_path):

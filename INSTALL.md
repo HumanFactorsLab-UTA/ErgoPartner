@@ -1,6 +1,6 @@
 # Install ErgoPartner on Windows
 
-Download the [public release ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.0/ErgoPartner-5.1.0.zip) and extract it to a writable folder. Noncommercial research and evaluation are permitted under the [project license](LICENSE). The web dashboard, analysis pipeline and reports run locally.
+Download the [public release ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.1/ErgoPartner-5.1.1.zip) and extract it to a writable folder. Noncommercial research and evaluation are permitted under the [project license](LICENSE). The web dashboard, analysis pipeline and reports run locally.
 
 ## System requirements
 

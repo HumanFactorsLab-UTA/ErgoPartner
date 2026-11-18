@@ -8,6 +8,7 @@ both anatomical sides independently, and writes auditable nested results.
 from __future__ import annotations
 
 import json
+import math
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, fields
@@ -62,7 +63,7 @@ from temporal.task_dynamics import (
     policy_from_config,
 )
 
-SOFTWARE_VERSION = "5.1.0"
+SOFTWARE_VERSION = "5.1.1"
 
 # Angles a posture condition is thresholded against. These are the ones that get
 # a per-subject baseline and a smoothing pass before any condition is tested.
@@ -959,6 +960,7 @@ class VideoProcessor:
         target_fps = video_config.get("target_fps")
         if target_fps is not None and float(target_fps) <= 0:
             raise ConfigurationError("video.target_fps must be positive or null")
+        sample_interval = 1.0 / float(target_fps) if target_fps is not None else None
         start_frame = video_config.get("start_frame")
         end_frame = video_config.get("end_frame")
         for name, value in (("start_frame", start_frame), ("end_frame", end_frame)):
@@ -993,7 +995,7 @@ class VideoProcessor:
             "status": "not_applicable",
             "reason": "temporal recovery runs on single-camera tracks only",
         }
-        last_processed_timestamp = -float("inf")
+        next_sample_timestamp = -math.inf
         last_video_timestamp = 0.0
         warnings = [
             "MediaPipe world landmarks are monocular model-estimated 3-D, not calibrated true 3-D.",
@@ -1073,11 +1075,7 @@ class VideoProcessor:
                     if end_frame is not None and frame_number > end_frame:
                         break
                     source_progress = max(0, frame_number - work_start + 1)
-                    if (
-                        target_fps is not None
-                        and last_processed_timestamp > -float("inf")
-                        and timestamp - last_processed_timestamp < 1.0 / float(target_fps)
-                    ):
+                    if timestamp < next_sample_timestamp:
                         if progress_callback and (
                             source_progress % 5 == 0 or source_progress == total_source_frames
                         ):
@@ -1088,7 +1086,12 @@ class VideoProcessor:
                                 f"Sampling source frame {frame_number:,}.",
                             )
                         continue
-                    last_processed_timestamp = timestamp
+                    if sample_interval is not None:
+                        # Decoder time-base conversions and addition can round the same
+                        # boundary in opposite directions by a few floating-point steps.
+                        next_sample_timestamp = math.nextafter(
+                            timestamp + sample_interval, -math.inf, steps=4
+                        )
                     processed_frames += 1
                     camera_frame_references, synchronization = self._camera_frame_evidence(
                         frames,

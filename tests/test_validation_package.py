@@ -278,12 +278,8 @@ def test_workbook_records_an_unscorable_frame(tmp_path):
     assert record["cannot_reason"] == "torso occluded"
 
 
-def _delivery(tmp_path, raters, randomise=False, repeats=0):
-    """Assemble a small delivery end to end, so its structure can be asserted."""
-
+def _sample(tmp_path):
     from PIL import Image
-
-    from validation import assemble_delivery
 
     sample = tmp_path / "sample"
     (sample / "images").mkdir(parents=True)
@@ -300,10 +296,108 @@ def _delivery(tmp_path, raters, randomise=False, repeats=0):
     key.to_csv(sample / "ground_truth_key.csv", index=False)
     for name in key["image_filename"]:
         Image.new("RGB", (312, 72), (70, 70, 70)).save(sample / "images" / name, "JPEG")
+    return sample
+
+
+def _delivery(tmp_path, raters, randomise=False, repeats=0):
+    from validation import assemble_delivery
 
     delivery = tmp_path / "delivery"
-    assemble_delivery.assemble(sample, delivery, raters, repeats, SEED, randomise)
-    return delivery
+    return assemble_delivery.assemble(_sample(tmp_path), delivery, raters, repeats, SEED, randomise)
+
+
+def test_delivery_rerun_preserves_returned_ratings_and_original_maps(tmp_path):
+    from validation import assemble_delivery
+
+    sample = _sample(tmp_path)
+    original = tmp_path / "round 1"
+    options = ["--sample-dir", str(sample), "--raters", "R01"]
+    assert assemble_delivery.main([*options, "--delivery-dir", str(original)]) == 0
+    returned = original / "3_when_ratings_return" / "returned" / "R01.json"
+    returned.write_bytes(b'{"rater_id":"R01","rated":true}')
+    before = {p: p.read_bytes() for p in original.rglob("*") if p.is_file()}
+    assert assemble_delivery.main([*options, "--delivery-dir", str(original)]) == 1
+    second = tmp_path / "round 2"
+    assert assemble_delivery.main([
+        "--sample-dir", str(sample), "--raters", "R02", "--delivery-dir", str(second)
+    ]) == 0
+    assert {p: p.read_bytes() for p in original.rglob("*") if p.is_file()} == before
+    for delivery, rater in [(original, "R01"), (second, "R02")]:
+        table = pd.read_csv(delivery / "2_keep_private" / "workbook_sheet_map.csv")
+        assert set(table["rater"]) == {rater}
+        instructions = delivery / "3_when_ratings_return" / "returned" / "PUT_RETURNED_FILES_HERE.txt"
+        assert str(instructions.parent) in instructions.read_text(encoding="utf-8")
+
+
+def test_failed_delivery_can_be_retried_at_the_same_destination(tmp_path, monkeypatch):
+    from validation import assemble_delivery, build_reference_doc
+
+    sample = _sample(tmp_path)
+    destination = tmp_path / "delivery"
+    options = ["--sample-dir", str(sample), "--delivery-dir", str(destination), "--raters", "R01"]
+
+    def fail_build(*_):
+        raise build_reference_doc.ReferenceError("interrupted reference workbook")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(build_reference_doc, "build", fail_build)
+        assert assemble_delivery.main(options) == 1
+    assert not destination.exists()
+    assert not list(tmp_path.glob(".delivery-*"))
+    assert assemble_delivery.main(options) == 0
+
+
+def test_standalone_package_preserves_existing_folders_and_zip_files(tmp_path):
+    from validation import build_expert_package
+
+    sample = _sample(tmp_path)
+    destination = tmp_path / "package"
+    archive = tmp_path / "package.zip"
+    options = ["--sample-dir", str(sample), "--package-dir", str(destination), "--raters", "R01"]
+    archive.write_bytes(b"prior archive")
+    assert build_expert_package.main(options) == 1
+    assert archive.read_bytes() == b"prior archive"
+    assert not destination.exists()
+    archive.unlink()
+    assert build_expert_package.main(options) == 0
+    assert (sample / "workbook_sheet_map.csv").is_file()
+    assert (sample / "package_item_ledger.csv").is_file()
+    workbook = destination / "scoring_workbook_R01.xlsx"
+    workbook.write_bytes(b"returned workbook")
+    assert build_expert_package.main(options) == 1
+    assert workbook.read_bytes() == b"returned workbook"
+
+    # A second standalone package may reuse the same sample's presentation maps.
+    assert build_expert_package.main([*options, "--package-dir", str(tmp_path / "copy")]) == 0
+    table = sample / "workbook_sheet_map.csv"
+    prior_map = table.read_bytes()
+    conflicting = tmp_path / "different"
+    assert build_expert_package.main([
+        "--sample-dir", str(sample), "--package-dir", str(conflicting), "--raters", "R02"
+    ]) == 1
+    assert table.read_bytes() == prior_map
+    assert not conflicting.exists()
+    assert not (tmp_path / "different.zip").exists()
+
+
+def test_standalone_publish_failure_rolls_back_only_new_files(tmp_path, monkeypatch):
+    from validation import build_expert_package
+
+    sample = _sample(tmp_path)
+    package = tmp_path / "package"
+    options = ["--sample-dir", str(sample), "--package-dir", str(package), "--raters", "R01"]
+
+    def concurrent_publication(_staged, destination):
+        destination.mkdir()
+        (destination / "saved-rating.json").write_bytes(b"retained")
+        raise FileExistsError("destination was published concurrently")
+
+    monkeypatch.setattr(build_expert_package, "publish_directory", concurrent_publication)
+    assert build_expert_package.main(options) == 1
+    assert (package / "saved-rating.json").read_bytes() == b"retained"
+    assert not (tmp_path / "package.zip").exists()
+    for name in ("package_item_ledger.csv", "workbook_sheet_map.csv", ".expert-package.lock"):
+        assert not (sample / name).exists()
 
 
 def test_the_delivery_keeps_the_answer_key_out_of_what_reviewers_receive(tmp_path):

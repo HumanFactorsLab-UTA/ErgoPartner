@@ -9,7 +9,7 @@
 
 ErgoPartner helps researchers study working posture from video. Record or import a task, find the frame with the highest RULA or REBA score, and inspect the joint angles and task conditions behind it. The Windows application runs locally and supports up to three synchronized views of a task.
 
-**Download and use version 5.1.0 for noncommercial research or evaluation without prior approval.** Repurposing, commercial use and deployment outside that scope require written permission from the research team. [Download the project ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.0/ErgoPartner-5.1.0.zip) · [Release notes and checksum](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.0) · [Windows installation](INSTALL.md) · [License](LICENSE) · [Other uses and contact](USE_POLICY.md)
+**Download and use version 5.1.1 for noncommercial research or evaluation without prior approval.** Repurposing, commercial use and deployment outside that scope require written permission from the research team. [Download the project ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.1/ErgoPartner-5.1.1.zip) · [Release notes and checksum](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.1) · [Windows installation](INSTALL.md) · [License](LICENSE) · [Other uses and contact](USE_POLICY.md)
 
 <picture>
   <source media="(max-width: 767px)" srcset="docs/features-mobile.webp">
@@ -47,7 +47,7 @@ For example, the included REBA worksheet test gives adjusted group scores of **8
 | **Sustained high-score periods** | Default thresholds are RULA ≥5 or REBA ≥8 for at least 1 second. A gap over 0.25 seconds breaks a period. |
 | **Completion and missing inputs** | Shows how many method observations could be scored and why others were withheld. Read coverage alongside the numeric results. |
 
-The two-second synthetic clip included in the release produced **14 processed frames and zero frames with a detected pose**. Its PDF shows exactly what a reviewer sees when the pipeline cannot issue a posture score. [Sample PDF report](examples/synthetic-screening-report.pdf) · [Summary calculations](temporal/aggregation.py)
+The two-second synthetic clip included in the release produced **20 processed frames and zero frames with a detected pose**. Its PDF shows exactly what a reviewer sees when the pipeline cannot issue a posture score. [Sample PDF report](examples/synthetic-screening-report.pdf) · [Summary calculations](temporal/aggregation.py)
 
 ## Optional Ollama interpretation
 
@@ -67,4 +67,4 @@ This two-image check establishes basic image handling on the tested setup. It pr
 - [Source map, files written by an assessment and developer entry points](PROJECT_ARCHITECTURE.md)
 - [Study validation tools](validation/README.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
-For publications, identify *ErgoPartner 5.1.0*, the release tag or commit, and any settings or local changes that affect scoring. Report camera setup, sampling rate, supplied task conditions, and the Ollama tag if used. For support or permission beyond noncommercial research and evaluation, contact the Human Factors Lab at The University of Texas at Arlington or Dr. Rahman. [Human Factors Lab](mailto:hflab@uta.edu) · [Dr. Rahman](mailto:mrahman@uta.edu)
+For publications, identify *ErgoPartner 5.1.1*, the release tag or commit, and any settings or local changes that affect scoring. Report camera setup, sampling rate, supplied task conditions, and the Ollama tag if used. For support or permission beyond noncommercial research and evaluation, contact the Human Factors Lab at The University of Texas at Arlington or Dr. Rahman. [Human Factors Lab](mailto:hflab@uta.edu) · [Dr. Rahman](mailto:mrahman@uta.edu)

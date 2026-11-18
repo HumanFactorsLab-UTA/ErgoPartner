@@ -1,6 +1,6 @@
 # Research use and permissions
 
-You can download ErgoPartner and start a noncommercial research study or evaluation without contacting the lab. You can configure your local copy, compare results with expert ratings, and publish the findings. Cite *ErgoPartner 5.1.0*, the release tag, and any changes that affect the analysis. Share the [official download](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.0) with colleagues. [License](LICENSE)
+You can download ErgoPartner and start a noncommercial research study or evaluation without contacting the lab. You can configure your local copy, compare results with expert ratings, and publish the findings. Cite *ErgoPartner 5.1.1*, the release tag, and any changes that affect the analysis. Share the [official download](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.1) with colleagues. [License](LICENSE)
 
 | Intended use | What to do |
 | --- | --- |

@@ -28,9 +28,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import random
 import shutil
+import tempfile
 import zipfile
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +41,7 @@ import pandas as pd
 
 from ergonomics.reba import REBACalculator
 from ergonomics.rula import RULACalculator
+from validation.package_output import publish_directory, require_new_output
 
 LOGGER = logging.getLogger("validation.build_expert_package")
 
@@ -345,6 +349,64 @@ def build_package(
     raters: list[str] | None = None,
     randomise_order: bool = False,
 ) -> Path:
+    require_new_output(package_dir)
+    package_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=package_dir.parent, prefix=".package-") as temporary:
+        staging = Path(temporary)
+        staged = staging / "reviewers" / package_dir.name
+        ledgers = staging / "private"
+        ledgers.mkdir()
+        write_package_files(
+            sample_dir, staged, repeats, seed, make_zip, raters, randomise_order, ledgers
+        )
+        archives = sorted(p for p in staged.parent.glob("*.zip") if p.is_file())
+        outputs = [(archive, package_dir.parent / archive.name) for archive in archives]
+        for _, destination in outputs:
+            require_new_output(destination)
+        # Standalone packages from one sample share its two private mapping files.
+        # Hold the lock through rollback so another build cannot adopt a partial map.
+        lock = sample_dir / ".expert-package.lock"
+        delete_on_close = getattr(os, "O_TEMPORARY", 0)
+        try:
+            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY | delete_on_close)
+        except FileExistsError as exc:
+            raise PackageError(f"Sample is locked for package publication: {lock}") from exc
+        try:
+            for ledger in ledgers.iterdir():
+                destination = sample_dir / ledger.name
+                if destination.is_file() and destination.read_bytes() == ledger.read_bytes():
+                    continue
+                if destination.exists() or destination.is_symlink():
+                    raise PackageError(
+                        f"Existing presentation map differs: {destination}. "
+                        "Use validation.assemble_delivery with a new --delivery-dir for another round."
+                    )
+                outputs.append((ledger, destination))
+            with ExitStack() as rollback:
+                for source_path, destination in outputs:
+                    with source_path.open("rb") as source, destination.open("xb") as target:
+                        rollback.callback(destination.unlink, missing_ok=True)
+                        shutil.copyfileobj(source, target)
+                publish_directory(staged, package_dir)
+                rollback.pop_all()
+        finally:
+            os.close(descriptor)
+            if not delete_on_close:
+                lock.unlink()
+    return package_dir
+
+
+def write_package_files(
+    sample_dir: Path,
+    package_dir: Path,
+    repeats: int,
+    seed: int,
+    make_zip: bool,
+    raters: list[str] | None,
+    randomise_order: bool,
+    ledger_dir: Path,
+) -> None:
+    """Write the package, sibling ZIPs and private maps into a build's staging area."""
     key_path = sample_dir / "ground_truth_key.csv"
     images_source = sample_dir / "images"
     if not key_path.is_file():
@@ -370,11 +432,8 @@ def build_package(
     items = build_items(key, repeats, seed)
     items = _enforce_separation(items, MIN_REPEAT_SEPARATION, rng)
 
-    if package_dir.exists():
-        LOGGER.info("Replacing existing package at %s", package_dir)
-        shutil.rmtree(package_dir)
     images_target = package_dir / "images"
-    images_target.mkdir(parents=True, exist_ok=True)
+    images_target.mkdir(parents=True)
     for name in sorted(set(key["image_filename"])):
         shutil.copy2(images_source / str(name), images_target / str(name))
 
@@ -434,9 +493,7 @@ def build_package(
         for rater, workbook_name in targets:
             suffix = f"_{rater}" if rater else ""
             archive = package_dir.parent / f"{package_dir.name}{suffix}.zip"
-            if archive.exists():
-                archive.unlink()
-            with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+            with zipfile.ZipFile(archive, "x", zipfile.ZIP_DEFLATED) as bundle:
                 for path in sorted(package_dir.rglob("*")):
                     if not path.is_file():
                         continue
@@ -460,23 +517,25 @@ def build_package(
             for index, item in enumerate(items)
         ]
     )
-    ledger_path = sample_dir / "package_item_ledger.csv"
+    ledger_path = ledger_dir / "package_item_ledger.csv"
     ledger.to_csv(ledger_path, index=False)
     LOGGER.info("Wrote %s", ledger_path)
 
     # Which workbook sheet holds which frame, per rater.  The analysis does not need it
     # -- every sheet carries its own frame id -- but it lets the study lead audit a
     # returned workbook without opening it.
-    map_path = sample_dir / "workbook_sheet_map.csv"
+    map_path = ledger_dir / "workbook_sheet_map.csv"
     pd.DataFrame(sheet_map).to_csv(map_path, index=False)
     LOGGER.info("Wrote %s", map_path)
-    return package_dir
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sample-dir", type=Path, default=DEFAULT_SAMPLE_DIR)
-    parser.add_argument("--package-dir", type=Path, default=DEFAULT_PACKAGE_DIR)
+    parser.add_argument(
+        "--package-dir", type=Path, default=DEFAULT_PACKAGE_DIR,
+        help="new package directory with unused names for any requested sibling ZIPs",
+    )
     parser.add_argument(
         "--repeats", type=int, default=DEFAULT_REPEATS,
         help="frames shown twice, for within-rater consistency (0 disables)",
@@ -506,7 +565,7 @@ def main(argv: list[str] | None = None) -> int:
             args.sample_dir, args.package_dir, args.repeats, args.seed, not args.no_zip,
             raters, args.randomise_order,
         )
-    except PackageError as exc:
+    except (FileExistsError, PackageError) as exc:
         LOGGER.error("%s", exc)
         return 1
     print(f"\nExpert package: {package}")
