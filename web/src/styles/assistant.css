@@ -1,0 +1,768 @@
+/* The assistant panel.
+ *
+ * Two columns: the conversation, and the visual scene reading beside it. The
+ * scene card sits alongside rather than inside the thread because it is a
+ * standing artifact of the session, not a message -- it is still there after the
+ * conversation is cleared, and its proposals are decisions waiting to be made.
+ */
+
+.assistant {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .assistant {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.assistant__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--s-4);
+  min-width: 0;
+}
+
+.assistant__status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  margin-right: var(--s-1);
+  vertical-align: baseline;
+}
+
+.dot--ok {
+  background: var(--good);
+}
+
+.assistant__offline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-small, 0.8125rem);
+  color: var(--serious-ink);
+  background: var(--serious-soft);
+  border: 1px solid var(--serious);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-3);
+}
+
+.assistant__thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-height: 260px;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: var(--s-2);
+  scroll-behavior: smooth;
+}
+
+.assistant__intro {
+  text-align: center;
+  padding: var(--s-6) var(--s-4);
+  color: var(--ink-secondary);
+}
+
+.assistant__intro h3 {
+  margin: var(--s-3) 0 var(--s-2);
+}
+
+.assistant__intro p {
+  max-width: 46ch;
+  margin: 0 auto;
+}
+
+/* --- messages ------------------------------------------------------ */
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bubble--user {
+  align-self: flex-end;
+  max-width: 82%;
+}
+
+.bubble--user .bubble__body {
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-lg);
+  padding: var(--s-3) var(--s-4);
+  color: var(--ink);
+}
+
+.bubble--assistant .bubble__body {
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-lg) var(--r-sm);
+  padding: var(--s-3) var(--s-4);
+  line-height: 1.62;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bubble__error {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: var(--critical-soft);
+  border: 1px solid var(--critical);
+  color: var(--critical-ink);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--ink);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* --- register tags -------------------------------------------------
+ * The register is the safety design, so it is rendered rather than parsed
+ * away: computed claims are traceable, observed ones are the model's eyes,
+ * judgment is its opinion. Colour separates them at a glance.
+ */
+
+.regtag {
+  /* Inline rather than inline-flex: a flex box inside flowing prose breaks the
+     line box, so a tag mid-sentence pushed the surrounding text apart. */
+  display: inline;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  margin: 0 2px;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+button.regtag {
+  cursor: pointer;
+}
+
+button.regtag:hover {
+  filter: brightness(0.94);
+}
+
+.regtag[data-register="computed"] {
+  background: var(--surface-sunken);
+  border-color: var(--line-strong);
+  color: var(--ink-secondary);
+}
+
+.regtag[data-register="observed"] {
+  background: var(--brand-soft);
+  border-color: var(--brand-border);
+  color: var(--brand-active);
+}
+
+.regtag[data-register="judgment"] {
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning-ink);
+}
+
+.regtag__detail {
+  text-transform: none;
+  opacity: 0.82;
+  margin-left: 4px;
+}
+
+/* --- tool trail ---------------------------------------------------- */
+
+.tooltrail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.tooltrail__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 2px 10px;
+}
+
+.tooltrail__item[data-status="done"] {
+  opacity: 0.7;
+}
+
+.tooltrail__item em {
+  font-style: normal;
+  font-family: var(--font-mono);
+}
+
+.tooltrail__spin {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--line-strong);
+  border-top-color: var(--brand);
+  border-radius: var(--r-pill);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- citations ----------------------------------------------------- */
+
+.citerow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.cite {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.cite:hover {
+  border-color: var(--brand);
+  color: var(--brand-active);
+  background: var(--brand-soft);
+}
+
+/* --- provenance ----------------------------------------------------
+ * Every figure in an answer is checked against the evidence the model was
+ * given. The clean case is shown too: "8 of 8 traced" every time is what makes
+ * "7 of 8" mean something when it appears.
+ */
+
+.provenance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: 0.75rem;
+  border-left: 2px solid var(--warning);
+  padding: var(--s-2) 0 var(--s-2) var(--s-3);
+  color: var(--warning-ink);
+}
+
+.provenance[data-clean="true"] {
+  border-left-color: var(--line-strong);
+  color: var(--ink-muted);
+}
+
+.provenance__count::before {
+  content: "✓ ";
+  font-weight: 700;
+}
+
+.provenance[data-clean="false"] .provenance__count::before {
+  content: "! ";
+}
+
+.provenance__list {
+  margin: 0;
+  padding-left: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.provenance__context {
+  display: block;
+  color: var(--ink-muted);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* --- agreement -----------------------------------------------------
+ * Measured across independent readings, so it gets the visual weight the
+ * model's own stated confidence used to have.
+ */
+
+.agree {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink-secondary);
+}
+
+.agree[data-band="unanimous"] {
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.agree[data-band="split"] {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.agree[data-band="contested"] {
+  border-color: var(--serious);
+  background: var(--serious-soft);
+  color: var(--serious-ink);
+}
+
+.agree__pips {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.agree__pips span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+  opacity: 0.22;
+}
+
+.agree__pips span[data-on="true"] {
+  opacity: 1;
+}
+
+.proposal[data-contested="true"] {
+  border-left-color: var(--serious);
+}
+
+.proposal__contested {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  font-size: 0.75rem;
+  color: var(--serious-ink);
+  background: var(--serious-soft);
+  border-radius: var(--r-sm);
+  padding: var(--s-2);
+}
+
+.scenecard__method {
+  font-size: 0.6875rem;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-2);
+  line-height: 1.5;
+}
+
+.scenecard__method strong {
+  color: var(--ink-secondary);
+}
+
+/* --- composer ------------------------------------------------------ */
+
+.assistant__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.8125rem;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: var(--s-2) var(--s-3);
+  color: var(--ink-secondary);
+}
+
+.chip--action {
+  cursor: pointer;
+  background: var(--surface);
+}
+
+.chip--action:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand-active);
+  background: var(--brand-soft);
+}
+
+.chip--action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.assistant__composer {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-end;
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-3);
+}
+
+.assistant__composer textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 44px;
+  max-height: 180px;
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+}
+
+.assistant__composer textarea:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+  border-color: var(--brand);
+}
+
+.assistant__composer textarea:disabled {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+.assistant__foot {
+  margin: 0;
+}
+
+/* --- scene card ---------------------------------------------------- */
+
+.assistant__side {
+  position: sticky;
+  top: var(--s-5);
+  min-width: 0;
+}
+
+.scenecard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--s-4);
+}
+
+.scenecard--empty {
+  gap: var(--s-3);
+}
+
+.scenecard__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.scenecard__head h3 {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-h3);
+  line-height: 1.35;
+}
+
+.scenecard__disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  font-size: 0.75rem;
+  color: var(--brand-active);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-3);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.scenecard__objects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.scenecard__proposals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.proposal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--series-2);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  background: var(--surface);
+}
+
+.proposal[data-status="accepted"] {
+  border-left-color: var(--good);
+  background: var(--good-soft);
+}
+
+.proposal[data-status="rejected"] {
+  border-left-color: var(--line-strong);
+  opacity: 0.68;
+}
+
+.proposal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-2);
+}
+
+.proposal__head strong {
+  font-size: var(--t-h3);
+}
+
+.proposal p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.proposal__actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.proposal__decided {
+  font-size: 0.75rem;
+  color: var(--good-ink);
+}
+
+.btn--sm {
+  font-size: 0.8125rem;
+  padding: var(--s-2) var(--s-3);
+}
+
+.linkish {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--brand);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* ==========================================================================
+   Docked rail
+   --------------------------------------------------------------------------
+   The assistant sits beside the workspace rather than inside a tab of it. Its
+   answers move the timeline, the replay and the frame panel; a tab that hides
+   those would make every citation a worse control than a scroll position.
+   ========================================================================== */
+
+.shell[data-rail="open"] {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--rail-w, 390px);
+}
+
+@media (max-width: 1500px) {
+  .shell[data-rail="open"] {
+    --rail-w: 340px;
+  }
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+}
+
+/* Below this the rail would leave the workspace unusably narrow, so it becomes
+   an overlay: still beside the content in spirit, on top of it in fact.
+   This block must stay *after* the base rule -- the two set `position` at equal
+   specificity, and with the order reversed the sticky value won and the rail
+   dropped into an implicit grid row underneath the content. */
+@media (max-width: 1180px) {
+  .shell[data-rail="open"] {
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  }
+
+  .rail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(420px, 92vw);
+    z-index: 40;
+    box-shadow: -8px 0 28px rgba(11, 11, 11, 0.16);
+  }
+}
+
+.rail .assistant {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.rail .assistant__main,
+.rail .assistant__side {
+  border: 0;
+  border-radius: 0;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.rail .assistant__side {
+  position: static;
+  padding: var(--s-4);
+}
+
+.rail .assistant__thread {
+  max-height: none;
+  flex: 1;
+}
+
+.railhead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.railhead__switch {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  flex: 1;
+}
+
+.railhead__switch button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  padding: var(--s-2) var(--s-3);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.railhead__switch button[aria-selected="true"] {
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(11, 11, 11, 0.08);
+}
+
+.railhead__dot {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.railhead__close {
+  border: 0;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: var(--s-1) var(--s-2);
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+
+.railhead__close:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* The way back in once the rail is closed. Sits clear of the page gutter so it
+   never covers the content it would open beside. */
+.assistant-handle {
+  position: fixed;
+  right: 0;
+  bottom: var(--s-7);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-inverse);
+  background: var(--ink);
+  border: 0;
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+  cursor: pointer;
+  box-shadow: -2px 2px 12px rgba(11, 11, 11, 0.2);
+}
+
+.assistant-handle:hover {
+  background: var(--brand-active);
+}

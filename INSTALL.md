@@ -1,6 +1,6 @@
 # Install ErgoPartner on Windows
 
-Download the version specified in your written approval and extract the complete archive to a writable folder. The web dashboard, analysis pipeline and reports run locally.
+Download the [public release ZIP](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/download/v5.1.0/ErgoPartner-5.1.0.zip) and extract it to a writable folder. Noncommercial research and evaluation are permitted under the [project license](LICENSE). The web dashboard, analysis pipeline and reports run locally.
 
 ## System requirements
 
@@ -83,7 +83,7 @@ On the release workstation, `gemma4:26b` correctly recognized the shapes and col
 
 ### Command line and developer checks
 
-To process an approved recording from the project root, substitute its path below. Store the output in a fresh result directory. For synchronized views, supply their paths together after `--video`.
+To process a recording you have permission to use from the project root, substitute its path below. Store the output in a fresh result directory. For synchronized views, supply their paths together after `--video`.
 
 ```powershell
 .\.venv\Scripts\python.exe main.py process --video .\recording.mp4 --config .\config.yaml --output .\results\first-run

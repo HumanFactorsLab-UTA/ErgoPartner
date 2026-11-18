@@ -1,0 +1,49 @@
+ErgoPartner Research and Evaluation License, version 1.0
+
+This license applies to the original ErgoPartner software and documentation
+distributed with this license. The copyright holders retain ownership.
+
+1. Research and evaluation
+
+Anyone may download, inspect, install, run and make working copies of this
+release for noncommercial research or evaluation without prior approval.
+You may configure it and make local modifications needed for those purposes.
+You may publish or present research findings and comparisons obtained within
+this scope. Identify the software and version you used, disclose material
+changes to your copy, and retain the supplied copyright and license notices.
+
+2. Uses that require permission
+
+Obtain prior written permission from the authorized rights holder through the
+ErgoPartner research team before using the software for any other purpose.
+This includes repurposing it for another product or service, commercial use,
+paid consulting, operating a hosted service, routine workplace deployment,
+and distributing copies or modified versions beyond what this license or
+applicable platform terms permit. A new noncommercial research question
+within section 1 does not itself require a permission request.
+
+You may share the official repository or release link. GitHub users may use
+the platform's viewing and forking features under its applicable terms.
+
+3. Other rights and responsible use
+
+Third-party software, model weights and fonts retain their own terms. See
+THIRD_PARTY_NOTICES.md. This license does not grant trademark rights or
+permission to imply endorsement by the research team or institution.
+Users are responsible for obtaining the permissions needed for their footage
+and studies. See USE_POLICY.md for guidance on handling recordings and
+interpreting screening results.
+
+4. Warranty and liability
+
+The software is provided as is, without warranties of any kind, to the extent
+permitted by applicable law. To that extent, the copyright holders and
+contributors disclaim liability for claims, damages or other liability
+arising from use of the software.
+
+5. Permission requests and future releases
+
+Contact the Human Factors Lab at The University of Texas at Arlington
+(hflab@uta.edu) or Dr. Rahman (mrahman@uta.edu) for uses outside section 1.
+A request grants additional rights only when approved in writing. Each release
+is governed by its accompanying license.

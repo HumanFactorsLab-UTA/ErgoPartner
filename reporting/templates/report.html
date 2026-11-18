@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ErgoPartner | Ergonomic Assessment Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 15mm 20mm 15mm;
+  }
+
+  /* Reset and base */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 3px solid #394ee4;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .header__title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #0d1b2a;
+    letter-spacing: -0.5px;
+  }
+  .header__brand { display: block; width: 130pt; height: auto; margin-bottom: 8pt; }
+
+  .header__subtitle {
+    font-size: 9pt;
+    color: #6c7a89;
+    margin-top: 4px;
+  }
+
+  .header__meta {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #6c7a89;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+
+  .section__title {
+    font-size: 12pt;
+    font-weight: 600;
+    color: #0d1b2a;
+    border-left: 3px solid #2f81f7;
+    padding-left: 10px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    background: #f7f9fc;
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  .info-grid__item {
+    display: flex;
+    gap: 6px;
+    font-size: 9.5pt;
+  }
+
+  .info-grid__label {
+    color: #6c7a89;
+    min-width: 100px;
+  }
+
+  .info-grid__value {
+    font-weight: 500;
+    color: #1a1a2e;
+  }
+
+  .score-card__label {
+    font-size: 9pt;
+    margin-top: 4px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    font-weight: 500;
+  }
+
+/* Risk colors */
+  .risk-low { color: #126226; background: #f0fdf4; }
+  .risk-medium { color: #804600; background: #fffbeb; }
+  .risk-high { color: #a01d1d; background: #fef2f2; }
+  .risk-critical { color: #dc2626; background: #fecaca; }
+
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  th {
+    background: #f7f9fc;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e0e4ea;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  /* NIOSH multipliers */
+  .multiplier-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .multiplier {
+    text-align: center;
+    background: #f7f9fc;
+    border-radius: 6px;
+    padding: 10px 6px;
+  }
+
+  .multiplier__name {
+    font-size: 8pt;
+    color: #6c7a89;
+    font-weight: 500;
+  }
+
+  .multiplier__value {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-top: 2px;
+  }
+
+  /* Recommendations */
+  .recommendations {
+    background: #f0f7ff;
+    border-left: 3px solid #2f81f7;
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .recommendations__title {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #2f81f7;
+    margin-bottom: 8px;
+  }
+
+  .recommendations p {
+    font-size: 9.5pt;
+    margin-bottom: 6px;
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    font-size: 7.5pt;
+    color: #9ca3af;
+    border-top: 1px solid #e0e4ea;
+    padding-top: 12px;
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  /* Withheld / warning panels */
+  .withheld {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    font-size: 9pt;
+  }
+
+  .withheld__title {
+    font-weight: 600;
+    color: #b45309;
+    margin-bottom: 6px;
+  }
+
+  .withheld ul { margin: 0; padding-left: 18px; }
+  .withheld li { margin-bottom: 3px; }
+
+  .notes {
+    font-size: 8.5pt;
+    color: #4a5568;
+    padding-left: 18px;
+  }
+
+  .notes li { margin-bottom: 4px; }
+
+  /* Charts */
+  .chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  .chart-block {
+    margin-bottom: 16px;
+    page-break-inside: avoid;
+  }
+
+  .chart-block__title {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #0d1b2a;
+    margin-bottom: 2px;
+  }
+
+  .chart-block__caption {
+    font-size: 8pt;
+    color: #6c7a89;
+    margin-bottom: 8px;
+  }
+
+  /* A method gets its own page so its plots are read together. */
+  .page-break { page-break-before: always; }
+
+  /* Utility */
+  .text-center { text-align: center; }
+  .mt-8 { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <img class="header__brand" src="{{ brand_logo }}" alt="ErgoPartner">
+    <div class="header__title">Ergonomic Assessment Report</div>
+    <div class="header__subtitle">{{task_name}} · {{study_name}}</div>
+  </div>
+  <div class="header__meta">
+    Generated: {{generated_at}}<br>
+    Sampling: {{sampling_label}}<br>
+    ErgoPartner {{software_version}}
+  </div>
+</div>
+
+<!-- Participant & Task Info -->
+<div class="section">
+  <div class="section__title">Participant &amp; Task</div>
+  <div class="info-grid">
+    <div class="info-grid__item">
+      <span class="info-grid__label">Participant</span>
+      <span class="info-grid__value">{{participant_id}}</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Age / Sex</span>
+      <span class="info-grid__value">{{age}} / {{sex}}</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Height</span>
+      <span class="info-grid__value">{{height_cm}} cm</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Weight</span>
+      <span class="info-grid__value">{{weight_kg}} kg</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Dominant Hand</span>
+      <span class="info-grid__value">{{dominant_hand}}</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Recording</span>
+      <span class="info-grid__value">{{duration}} ({{duration_sec}} s), {{camera_setup}}</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Frames</span>
+      <span class="info-grid__value">{{pose_frames}} posed of {{processed_frames}} processed</span>
+    </div>
+    <div class="info-grid__item">
+      <span class="info-grid__label">Calibration</span>
+      <span class="info-grid__value">{{calibration}}</span>
+    </div>
+  </div>
+  {% if task_description %}
+  <p style="margin-top: 10px; font-size: 9.5pt; color: #4a5568;">{{task_description}}</p>
+  {% endif %}
+</div>
+
+{% if summaries %}
+<div class="section">
+  <div class="section__title">Assessment summary</div>
+  {% for summary in summaries %}
+  <p><strong>{{ summary.headline }}</strong></p><p>{{ summary.detail }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Summary Table -->
+<div class="section">
+  <div class="section__title">Score Summary</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Peak</th>
+        <th>Risk Level</th>
+        <th>Typical</th>
+        <th>High percentile</th>
+        <th>Sustained</th>
+        <th>Observations</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if reba.present %}
+      <tr>
+        <td><strong>REBA</strong></td>
+        <td>{{reba.peak}} at {{reba.peak_sec}}<br>Frame {{reba.peak_frame}}</td>
+        <td><span class="score-card__label {{reba.class}}">{{reba.band}}</span></td>
+        <td>{{reba.typical}}</td>
+        <td>{{reba.percentile}} (P{{reba.percentile_label}})</td>
+        <td>{{reba.sustained}}</td>
+        <td>{{reba.observations}}</td>
+      </tr>
+      {% endif %}
+      {% if rula.present %}
+      <tr>
+        <td><strong>RULA</strong></td>
+        <td>{{rula.peak}} at {{rula.peak_sec}}<br>Frame {{rula.peak_frame}}</td>
+        <td><span class="score-card__label {{rula.class}}">{{rula.band}}</span></td>
+        <td>{{rula.typical}}</td>
+        <td>{{rula.percentile}} (P{{rula.percentile_label}})</td>
+        <td>{{rula.sustained}}</td>
+        <td>{{rula.observations}}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <p class="mt-8" style="font-size: 8.5pt; color: #6c7a89;">
+    Typical is the duration-weighted mean. Sustained counts periods held at high risk.
+  </p>
+</div>
+
+<!-- Revised NIOSH Lifting Equation -->
+<div class="section">
+  <div class="section__title">Revised NIOSH Lifting Equation</div>
+  {% if rnle.present %}
+  <p><strong>Lifting index {{ rnle.index }}</strong> ({{ rnle.risk }}). Recommended weight limit {{ rnle.rwl }} kg.</p>
+  {% if charts.multipliers %}
+  <div class="chart-block">
+    <div class="chart-block__caption">
+      Each multiplier scales the 23 kg load constant. The shortfall below 1.0 is the
+      part of the recommended limit that task geometry took away.
+    </div>
+    {{charts.multipliers}}
+  </div>
+  {% else %}
+  <div class="multiplier-grid">
+    {% for item in rnle.multipliers %}
+    <div class="multiplier">
+      <div class="multiplier__name">{{item.name}} · {{item.label}}</div>
+      <div class="multiplier__value">{{item.value}}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if rnle.action %}
+  <p class="mt-8" style="font-size: 9.5pt;"><strong>Action level:</strong> {{rnle.action}}</p>
+  {% endif %}
+  {% else %}
+  <div class="withheld">
+    <div class="withheld__title">Score withheld ({{rnle.status}})</div>
+    {% if rnle.withheld %}
+    <ul>
+      {% for reason in rnle.withheld %}
+      <li>{{reason}}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>The equation did not produce a result for this task.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Exposure and drivers, one page per method -->
+{% for key, method in [("REBA", reba), ("RULA", rula)] %}
+{% set plots = charts[key|lower] %}
+{% if method.present and plots.timeline %}
+<div class="section page-break">
+  <div class="section__title">{{key}} exposure over time</div>
+
+  <div class="chart-block">
+    <div class="chart-block__title">Score against elapsed time</div>
+    <div class="chart-block__caption">
+      Peak {{method.peak}} ({{method.band}}) at {{method.peak_sec}}, frame {{method.peak_frame}}.
+      Each point represents a scored observation. Gaps identify missing measurements.
+    </div>
+    {{plots.timeline}}
+  </div>
+
+  {% if plots.exposure %}
+  <div class="chart-block">
+    <div class="chart-block__title">Time by action level</div>
+    <div class="chart-block__caption">
+      Duration-weighted share of scored time. A short peak and a sustained mid-range
+      exposure are different problems, and this figure separates them.
+    </div>
+    {{plots.exposure}}
+  </div>
+  {% endif %}
+
+  {% if plots.drivers %}
+  <div class="chart-block">
+    <div class="chart-block__title">What drove the score</div>
+    <div class="chart-block__caption">
+      Points each region added, typically and at its worst, with how much of the task
+      it was raised for. Reducing the longest bar moves the score the most.
+    </div>
+    {{plots.drivers}}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Risk episodes -->
+{% if episodes %}
+<div class="section">
+  <div class="section__title">Sustained Risk Episodes</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Window</th>
+        <th>Duration</th>
+        <th>Peak</th>
+        <th>Band</th>
+        <th>At</th>
+        <th>Frame</th>
+        <th>Leading Drivers</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for episode in episodes %}
+      <tr>
+        <td>{{episode.window}}</td>
+        <td>{{episode.duration}} s</td>
+        <td>{{episode.peak}}</td>
+        <td><span class="score-card__label {{episode.class}}">{{episode.band}}</span></td>
+        <td>{{episode.peak_clock}}</td>
+        <td>{{episode.peak_frame}}</td>
+        <td>{{episode.drivers}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="mt-8" style="font-size: 8.5pt; color: #6c7a89;">
+    Each row cites the frame that produced its peak, so any figure here can be opened
+    in the workspace and checked against the footage.
+  </p>
+</div>
+{% endif %}
+
+<!-- Method completion -->
+<div class="section">
+  <div class="section__title">Method Completion</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Scored</th>
+        <th>Of Total</th>
+        <th>Completion</th>
+        <th>Leading Blocker</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if reba.present %}
+      <tr>
+        <td><strong>REBA</strong></td>
+        <td>{{reba.scored}}</td>
+        <td>{{reba.total}}</td>
+        <td>{{reba.completion}}</td>
+        <td>{{reba.blocker or "None recorded"}}</td>
+      </tr>
+      {% endif %}
+      {% if rula.present %}
+      <tr>
+        <td><strong>RULA</strong></td>
+        <td>{{rula.scored}}</td>
+        <td>{{rula.total}}</td>
+        <td>{{rula.completion}}</td>
+        <td>{{rula.blocker or "None recorded"}}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <p class="mt-8" style="font-size: 8.5pt; color: #6c7a89;">
+    An observation the method could not score is excluded, never guessed. A completion
+    below 100% means the peak was drawn from the scored subset only.
+  </p>
+</div>
+
+<!-- Recommendations -->
+{% if review %}
+<div class="section">
+  <div class="section__title">Ergonomist Review</div>
+  <p><strong>Status:</strong> {{ "Reviewed" if review.reviewed else "Needs review" }}</p>
+  {% if review.reviewer %}<p><strong>Reviewer:</strong> {{ review.reviewer }}</p>{% endif %}
+  {% if review.reviewedAt %}<p><strong>Reviewed at:</strong> {{ review.reviewedAt }}</p>{% endif %}
+  {% if review.stale %}<p>The analysis changed after these notes were saved. These findings require review against the current results.</p>{% endif %}
+  {% if review.findings %}<h3 class="mt-8">Findings</h3><p style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ review.findings }}</p>{% endif %}
+  {% if review.actions %}<h3 class="mt-8">Recommended actions</h3><p style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ review.actions }}</p>{% endif %}
+</div>
+{% endif %}
+<div class="section">
+  {% for reading in interpretations %}
+  <div class="section__title">Selected AI observations</div>
+  <p>Visual interpretation by {{ reading.model }} · {{ reading.createdAt }}</p>
+  {% for item in reading.observations %}
+  <div style="break-inside: avoid; margin: 8px 0;">
+    <strong>{{ item.text }}</strong>
+    <p>Visibility · {{ item.visibility }}</p>
+    <p>{% for ref in item.evidence %}{{ ref.sec|clock }} (camera {{ ref.camera + 1 }}, frame {{ ref.frame }}){% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </div>
+  {% endfor %}
+  <p>{{ reading.limitations }}</p>
+  {% endfor %}
+  <div class="recommendations">
+    <div class="recommendations__title">Assessment Notes</div>
+    {% if reba.present and reba.action %}
+    <p><strong>REBA {{reba.peak}} ({{reba.band}}):</strong> {{reba.action}}.</p>
+    {% endif %}
+    {% if rula.present and rula.action %}
+    <p><strong>RULA {{rula.peak}} ({{rula.band}}):</strong> {{rula.action}}</p>
+    {% endif %}
+    <p>Scores use deterministic calculators applied to estimated postures and documented task conditions. For frame-level evidence, open the analysis in the ErgoPartner workspace.</p>
+  </div>
+</div>
+
+<!-- Limitations -->
+{% if warnings %}
+<div class="section">
+  <div class="section__title">Limitations and Warnings</div>
+  <ul class="notes">
+    {% for warning in warnings %}
+    <li>{{warning}}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+  <strong>Disclaimer:</strong> This report is generated from video-based pose estimation using MediaPipe landmarks and deterministic ergonomic scoring methods (RULA 1993, REBA 2000, Revised NIOSH Lifting Equation).
+  Results are screening-level estimates only. They do not constitute a clinical diagnosis, injury assessment, or replacement for a qualified ergonomic evaluation.
+  Measurement quality also depends on camera position, visibility, and task inputs.
+  Generated by ErgoPartner {{software_version}} at {{sampling_label}}.
+</div>
+
+</body>
+</html>

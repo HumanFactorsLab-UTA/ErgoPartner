@@ -1,0 +1,11 @@
+{
+  "name": "picomatch",
+  "upstream_version": "4.0.7",
+  "local_version": "4.0.8-posture.1",
+  "tarball": "https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz",
+  "integrity": "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==",
+  "license": "MIT",
+  "advisory": "GHSA-fc5q-39xc-vjpf",
+  "upstream_parser_sha256": "4e1e05447668aa1e94366c5516a2bcd8f5fff800cc92b1d0cd7d77703b8618c4",
+  "patched_parser_sha256": "a41326c7cfe87b88e541900b241bad29f61723d5d7c134207c3106bef9361f06"
+}

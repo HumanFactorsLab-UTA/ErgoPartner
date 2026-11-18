@@ -1,0 +1,159 @@
+/*
+ * Design tokens.
+ *
+ * The categorical hues and the chart chrome are the validated light column of
+ * the reference palette, checked against this application's own chart surface
+ * (#fcfcfb) rather than a generic one:
+ *
+ *   node scripts/validate_palette.js "#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4,#008300" \
+ *        --mode light --surface "#fcfcfb"
+ *   PASS lightness band · PASS chroma floor · PASS CVD separation (worst adjacent
+ *   dE 9.1) · PASS normal-vision floor (worst adjacent dE 19.6)
+ *   WARN contrast: aqua, yellow and magenta sit below 3:1 on this surface, so
+ *   anything drawn in them ships a visible label or a table view. Blue and
+ *   orange -- the two the product actually leans on -- clear it.
+ *
+ * Status hues are reserved for risk bands and are never reused as a series
+ * colour. Warning and serious are sub-3:1 on light by design, which is why a
+ * band colour in this app always travels with its published label.
+ *
+ * Spacing is an 8px grid with a 4px half-step. Nothing should introduce a value
+ * outside the scale; if a gap needs 13px the layout is wrong, not the scale.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Surfaces ---- */
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f2f2ef;
+  --overlay: rgba(11, 11, 11, 0.42);
+
+  /* ---- Ink ---- */
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --ink-inverse: #ffffff;
+
+  /* ---- Lines ---- */
+  --line: #e1e0d9;
+  --line-strong: #c3c2b7;
+  --ring: rgba(11, 11, 11, 0.1);
+
+  /* ---- Brand: blue primary, orange accent ---- */
+  --brand: #394ee4;
+  --brand-hover: #3042c5;
+  --brand-active: #2938a6;
+  --brand-soft: #eef0ff;
+  --brand-border: #adb7ff;
+  --accent: #fa7953;
+  --on-accent: #111629;
+  --accent-hover: #ef714c;
+  --accent-soft: #fff0eb;
+  --accent-border: #f5baa7;
+
+  /* ---- Categorical series (assigned in order, never cycled) ---- */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+
+  /* ---- Sequential blue, light to dark ---- */
+  --seq-100: #cde2fb;
+  --seq-200: #9ec5f4;
+  --seq-300: #6da7ec;
+  --seq-400: #3987e5;
+  --seq-500: #256abf;
+  --seq-600: #184f95;
+  --seq-700: #0d366b;
+
+  /* ---- Status: risk bands only ---- */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --good-soft: #e8f6e8;
+  --warning-soft: #fef4e0;
+  --serious-soft: #fdeee8;
+  --critical-soft: #fbe9e9;
+  --good-ink: #0a5c0a;
+  --warning-ink: #7a5300;
+  --serious-ink: #8f3d1c;
+  --critical-ink: #8f1f1f;
+
+  /* ---- Chart chrome ---- */
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+
+  /* ---- Spacing: 8px grid, 4px half-step ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 40px;
+  --s-8: 48px;
+  --s-9: 64px;
+  --s-10: 80px;
+
+  /* ---- Radii ---- */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --r-pill: 999px;
+
+  /* ---- Type ---- */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --t-display: 2.25rem;
+  --t-h1: 1.75rem;
+  --t-h2: 1.3125rem;
+  --t-h3: 1.0625rem;
+  --t-body: 0.9375rem;
+  --t-small: 0.8125rem;
+  --t-micro: 0.75rem;
+  --lh-tight: 1.15;
+  --lh-snug: 1.35;
+  --lh-body: 1.55;
+
+  /* ---- Elevation: hairline first, shadow only where something truly floats ---- */
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.05);
+  --shadow-md: 0 4px 12px rgba(11, 11, 11, 0.08);
+  --shadow-lg: 0 12px 32px rgba(11, 11, 11, 0.12);
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 120ms;
+  --base: 200ms;
+  --slow: 320ms;
+
+  /* ---- Layout ---- */
+  --sidebar-w: 264px;
+  --topbar-h: 56px;
+  --content-max: 1360px;
+}
+
+/* Motion is an explanation here, not decoration, so removing it must never
+   remove meaning. Everything still lands in its final state instantly. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fast: 1ms;
+    --base: 1ms;
+    --slow: 1ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

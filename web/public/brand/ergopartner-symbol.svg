@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="ErgoPartner symbol">
+<title>ErgoPartner symbol</title>
+<g transform="translate(4.5 3.5)">
+<g class="movement" opacity="1" transform="translate(0 0)">
+<path fill="#394EE4" d="M8 108V84Q8 69 19 58L50 27Q53 24 56 27L68 39Q71 42 68 45L36 77Q30 83 30 89V108Q30 113 25 113H13Q8 113 8 108Z"/>
+</g>
+<g class="guidance" opacity="1" transform="translate(0 0)">
+<path fill="#394EE4" d="M46 108V97Q46 84 56 74L91 39Q94 36 97 39L109 51Q112 54 109 57L74 92Q69 97 69 103V108Q69 113 64 113H51Q46 113 46 108Z"/>
+</g>
+<g class="point" opacity="1" transform="translate(0 0)">
+<path fill="#FA7953" d="M77 17L84 10Q87 7 90 10L98 18Q101 21 98 24L91 31Q88 34 85 31L77 23Q74 20 77 17Z"/>
+</g>
+</g>
+</svg>

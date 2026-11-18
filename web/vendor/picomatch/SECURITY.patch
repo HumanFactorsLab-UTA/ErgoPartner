@@ -1,0 +1,27 @@
+--- upstream/lib/parse.js
++++ patched/lib/parse.js
+@@ -285,6 +285,15 @@
+ };
+ 
+ const analyzeRepeatedExtglob = (body, options) => {
++  const branches = splitTopLevel(body).map(branch => branch.trim());
++
++  // POSTURE security patch for GHSA-fc5q-39xc-vjpf, 2026-11-17.
++  // A wildcard inside a repeated branch can nest unbounded quantifiers.
++  // Use the existing literal fallback for these patterns.
++  if (branches.some(branch => branch.includes('*'))) {
++    return { risky: true };
++  }
++
+   if (options.maxExtglobRecursion === false) {
+     return { risky: false };
+   }
+@@ -293,8 +302,6 @@
+     typeof options.maxExtglobRecursion === 'number'
+       ? options.maxExtglobRecursion
+       : constants.DEFAULT_MAX_EXTGLOB_RECURSION;
+-
+-  const branches = splitTopLevel(body).map(branch => branch.trim());
+ 
+   if (branches.length > 1) {
+     if (

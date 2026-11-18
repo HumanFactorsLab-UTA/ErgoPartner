@@ -1,0 +1,68 @@
+# Virtual environments
+.venv/
+.venv*/
+venv/
+env/
+
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Editor / OS
+.vs/
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini
+
+# Local development checkout
+.gitlab-repo/
+
+# The application downloads and verifies configured MediaPipe models.
+models/*.task
+
+# Generated analysis output and local logs
+output/
+run_output/
+test_output/
+test_output_15fps/
+test_output_30fps/
+results/
+audit_runs/
+logs/
+tmp/
+
+# Private validation frames, reviewer records and answer keys
+validation_sample/
+
+# Streamlit local state
+.streamlit/secrets.toml
+.posture-settings.json
+.posture-settings-*.tmp
+.posture/
+
+# Web dependencies and build output
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+
+# Locally generated video proxies
+.video_proxy/
+
+# Local study data and optional private regression baseline
+studies/
+tests/regression/baseline_snapshot.json
+.env
+.env.*

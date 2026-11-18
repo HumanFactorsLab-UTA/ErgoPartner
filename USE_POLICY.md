@@ -1,53 +1,19 @@
-# Research evaluation policy
+# Research use and permissions
 
-## Requesting access
+You can download ErgoPartner and start a noncommercial research study or evaluation without contacting the lab. You can configure your local copy, compare results with expert ratings, and publish the findings. Cite *ErgoPartner 5.1.0*, the release tag, and any changes that affect the analysis. Share the [official download](https://github.com/HumanFactorsLab-UTA/ErgoPartner/releases/tag/v5.1.0) with colleagues. [License](LICENSE)
 
-ErgoPartner is available for approved research evaluation. Contact the Human Factors Lab at UTA using the [private request instructions](ACCESS_REQUEST.md) to tell us who will use the software, which project
-you want to evaluate it for and whether you plan to publish findings. Supply
-only the information requested on the form. Keep participant details, footage
-and other study records out of your request.
+| Intended use | What to do |
+| --- | --- |
+| Run a noncommercial study, reproduce findings or evaluate the software locally | Download and use the public release. |
+| Sell a service, use the software for paid consulting, incorporate it into another product or deploy it for routine workplace decisions | Obtain written permission from the research team first. |
+| Redistribute the code or a modified build outside the permissions in the license | Describe what you plan to distribute and request permission first. |
 
-Your permission begins when the rights holder approves your request in writing.
-Your approval identifies the people, purpose, software release and any end date
-it covers. Each additional evaluator needs their own approval.
+For a permission request, tell the Human Factors Lab at UTA or Dr. Rahman who will use the software, which version, what you intend to do and whether others will receive the software or service. Keep study data out of the request. [Human Factors Lab](mailto:hflab@uta.edu) · [Dr. Rahman](mailto:mrahman@uta.edu)
 
-## What you may do
+## Recordings and reports
 
-You may download, install, inspect and run the approved release locally to
-evaluate it for the stated purpose. You may make working and backup copies and
-the local adjustments needed for that evaluation. A research study, including
-publication of its findings, should be described in your request and covered by
-your written approval. In publications arising from approved use, cite
-ErgoPartner and the exact version. Retain copyright and third-party notices.
+Use footage you have permission to process. Obtain the consent and research approvals required for your study. Restrict access to identifiable recordings, frames, notes and reports. Use synthetic examples or deidentified error messages when asking for support. If you select a remote model endpoint, check that your study permits sending images and assessment information to that service.
 
-## Uses requiring separate written permission
+Review scores against the footage, task inputs, coverage and known limitations. An ergonomist should examine the underlying evidence before drawing conclusions about a task. The screening output cannot establish a diagnosis, individual injury probability or fitness for work.
 
-The evaluation license excludes repurposing the software for another project,
-integrating it into another product or service, redistributing the source or a
-modified build, and sharing copies or access with unapproved people. It also
-excludes commercial use, including sales, paid consulting and hosted services,
-as well as production or workplace deployment. Contact the rights holder and
-obtain a separate written grant before undertaking any of these activities.
-Approval to evaluate ErgoPartner grants no right to market another product
-under its name or logo or to claim endorsement by the lab.
-
-## Using footage and findings
-
-Use recordings you have permission to process and obtain the consent and
-research approvals your study requires. Restrict access to identifiable
-footage and reports. Use synthetic or appropriately deidentified examples for
-support requests. If you configure a remote AI service, confirm that you are
-authorized to send the relevant frames and assessment information to it.
-
-ErgoPartner provides experimental ergonomic screening results. Review the
-source footage, missing observations, assumptions and scoring evidence when
-interpreting a result. Treat AI-generated observations as suggestions for
-human review. Clinical, employment and workplace safety decisions about an individual fall outside the approved evaluation scope.
-
-## Which terms apply
-
-The signed or accepted agreement and written approval govern the software
-rights the lab grants. Third-party components retain their own licenses. When
-permission ends, follow the agreement's terms for stopping use and handling
-copies. The team plans an open-source release after further development and
-finalization. That release will identify its license and the versions it covers.
+The team plans a later open-source release after further development and finalization. The license shipped with the version you download defines the rights for that version.

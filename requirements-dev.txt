@@ -1,0 +1,9 @@
+-r requirements.txt
+pytest==9.0.3
+# HTTP client for Starlette's TestClient in the API tests.
+httpx2==2.13.1
+pytest-cov==7.0.0
+ruff==0.14.10
+mypy==1.19.0
+pip-audit==2.9.0
+types-PyYAML==6.0.12.20260518

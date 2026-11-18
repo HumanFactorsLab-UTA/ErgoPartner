@@ -1,0 +1,217 @@
+# Ergonomic video assessment configuration (schema version 4)
+schema_version: 4
+
+video:
+  paths: []
+  fps_override: null
+  # Target samples per second. Set null to process every decoded frame.
+  target_fps: 10
+  # Inclusive source-frame bounds. null processes from the beginning/to the end.
+  start_frame: null
+  end_frame: null
+  # Must be declared after checking the player/capture chain; null means unknown.
+  mirrored: null
+  multi_camera_sync_tolerance_sec: 0.050
+
+pose:
+  model_path: models/pose_landmarker_heavy.task
+  model_variant: heavy
+  model_version: mediapipe-pose-landmarker-heavy-float16-latest-at-bundle-time
+  model_sha256: 64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+  # Upper bound on detected people per frame. Single-camera tracking can use multiple detections.
+  max_poses: 4
+  # CPU is the supported default for the Windows MediaPipe build.
+  use_gpu: false
+  # Only set true to accept CPU inference when use_gpu was requested.
+  allow_cpu_fallback: false
+  # Process each camera on its own inference thread.
+  parallel_cameras: true
+
+# Hand landmarks supply the palm plane for estimating wrist angle.
+hand:
+  enabled: true
+  model_path: models/hand_landmarker.task
+  model_variant: full
+  model_version: mediapipe-hand-landmarker-float16-latest-at-bundle-time
+  model_sha256: fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+  use_gpu: false
+
+tracking:
+  max_normalized_distance: 0.20
+  max_missed_frames: 15
+
+quality:
+  # legacy_cone includes lateral inclination. sagittal_projection isolates the sagittal component.
+  neck_flexion_method: legacy_cone  # legacy_cone | sagittal_projection
+  arm_abduction_method: frontal_projection  # frontal_projection | lateral_excursion
+  minimum_landmark_visibility: 0.5
+  # suitable | unknown | unsupported; this is an ergonomic-view review, not pose confidence.
+  camera_view_status: unknown
+  # Allow a pose-only wrist estimate when the hand mesh is unavailable. The result records its source.
+  allow_pose_only_wrist: true
+  # RULA/REBA anchor their lowest trunk, neck and wrist bands at exactly 0 deg,
+  # which continuous pose data never reaches. Angles within this many degrees of
+  # neutral are reported to the methods as neutral. Set 0 to disable.
+  neutral_tolerance_deg: 2.0
+
+calibration:
+  status: not_calibrated  # not_calibrated | calibrated
+  method: null
+  scale_cm_per_pixel: null
+  lens_calibration_file: null
+  camera_tilt_deg: null
+
+fusion:
+  strategy: per_angle_best_view
+  prefer_hand_mesh: false  # Prefer the geometric view. Set true for the mesh-first sensitivity analysis.
+  camera_roles:
+    front: 0
+    side: 1
+    iso: 2
+  visibility_threshold: 0.5
+
+# Posture conditions resolve in order: entered, measured, assumed, then unknown.
+task_inputs:
+  # standing_light_work assumes 0 kg and good coupling. Enter observed values when available.
+  # Set null to omit profile assumptions. See ergonomics/profiles.py for the available profiles.
+  assumption_profile: standing_light_work
+  load_kg: null
+  coupling: null  # good | fair | poor | unacceptable
+  shock_or_rapid_force: null
+  static_posture_over_one_minute: null
+  repeated_more_than_four_per_minute: null
+  rapid_large_posture_change_or_unstable_base: null
+  seated: null
+  legs_weight_bearing: null  # bilateral | walking | unilateral | unstable
+  legs_supported_and_balanced: null
+  trunk_twisted: null
+  trunk_side_bent: null
+  trunk_twisted_or_side_flexed: null
+  neck_twisted: null
+  neck_side_bent: null
+  neck_twisted_or_side_flexed: null
+  rula_load_type: null  # intermittent | static_or_repeated
+  left_upper_arm_abducted: null
+  right_upper_arm_abducted: null
+  left_upper_arm_abducted_or_rotated: null
+  right_upper_arm_abducted_or_rotated: null
+  left_shoulder_raised: null
+  right_shoulder_raised: null
+  left_arm_supported_or_leaning: null
+  right_arm_supported_or_leaning: null
+  left_arm_supported_or_gravity_assisted: null
+  right_arm_supported_or_gravity_assisted: null
+  left_lower_arm_across_midline_or_out_to_side: null
+  right_lower_arm_across_midline_or_out_to_side: null
+  left_wrist_deviated: null
+  right_wrist_deviated: null
+  left_wrist_twist_at_end_range: null
+  right_wrist_twist_at_end_range: null
+  left_wrist_deviated_or_twisted: null
+  right_wrist_deviated_or_twisted: null
+
+# Single-task lifting inputs. Enter measured geometry, handled mass and applicable work conditions.
+# When enabled, stature-scaled pose estimates can fill missing geometry. Review their source and any duration assumption.
+rnle:
+  estimate_from_video: true
+  # Used to convert model units to centimetres. Read from participant_info.json
+  # by the batch runner and the dashboard; set here for a standalone run.
+  participant_height_cm: null
+  horizontal_cm: null
+  vertical_cm: null
+  travel_distance_cm: null
+  asymmetry_deg: null
+  frequency_lifts_per_min: null
+  duration: null  # short | moderate | long
+  coupling: null  # good | fair | poor
+  load_weight_kg: null
+  # manual_measurement | calibrated_video | anthropometric_estimate.
+  # Set automatically to anthropometric_estimate when a distance was estimated.
+  distance_measurement_source: manual_measurement
+  applicability: null
+  # When reviewed, replace null with all fields explicitly true/false; see ERGONOMICS_METHODS.md.
+
+# Lift detection and anthropometric scaling. Defaults are documented in
+# ergonomics/rnle_estimation.py; name only what you want to move.
+rnle_estimation: {}
+
+# Thresholds that turn a measured angle into a RULA/REBA posture condition.
+# Defaults are documented in core/posture_conditions.py.
+posture_conditions:
+  thresholds: {}
+  # trial_percentile estimates a baseline within the recording. reviewed_neutral uses a supplied reference.
+  # absolute uses a zero-degree reference. See core/posture_conditions.py.
+  neutral_reference:
+    source: trial_percentile
+
+# Thresholds for the conditions measured over time rather than per frame:
+# static posture, repetition rate, activity, seated, and leg weight bearing.
+# Defaults are documented in temporal/task_dynamics.py.
+task_dynamics: {}
+
+temporal_aggregation:
+  percentile: 90
+  sustained_min_duration_sec: 1.0
+  maximum_gap_sec: 0.25
+  rula_high_risk_threshold: 5
+  reba_high_risk_threshold: 8
+
+logging:
+  level: INFO
+
+# Optional model service for visual interpretation and chat. Local posture calculations run independently.
+assistant:
+  enabled: true
+  endpoint: "http://127.0.0.1:11434/v1"
+  # Settings can select another locally installed vision model. The tested model is described in INSTALL.md.
+  chat_model: "gemma4:26b"
+  scene_model: "gemma4:26b"
+  # Read from the environment, never written here; this file is committed.
+  api_key_env: "POSTURE_ASSISTANT_KEY"
+  temperature: 0.1
+  # Sampling temperature for cached scene interpretations.
+  scene_temperature: 0.0
+  # Number of frame sets examined for scene interpretation. Set 1 for one pass.
+  scene_passes: 3
+  seed: 20260804
+  max_tool_iterations: 8
+  request_timeout_sec: 600
+  frame_width: 640
+  # Context used for the local probes. Set 0 to use the server's own default.
+  context_tokens: 32768
+  # auto: use Ollama's native /api/chat when the endpoint is Ollama, because its
+  # OpenAI compatibility layer silently drops the options block and with it
+  # context_tokens above. Pin to
+  # "openai" for llama.cpp, vLLM, or any other compatible server.
+  dialect: auto
+  # Frames pushed into context per question type. A whole trial is thousands of
+  # frames; a question about one moment needs two.
+  frame_budget:
+    # Twelve frames spread across a trial, with every episode peak forced in, is
+    # enough to name the task and see the handled object. Going higher costs
+    # context and latency without changing the reading.
+    scene: 12
+    episode: 8
+    moment: 2
+  prompt_version: "assistant/2026-11-grounded-2"
+  # Each exchange is appended to assistant_transcript.jsonl beside the results,
+  # with the model, prompt version, temperature and full tool trace.
+  log_conversations: true
+
+# Recover landmarks that drop out briefly, using the frames on either side.
+# A landmark is reconstructed only when it is bracketed by confident
+# observations, the gap is short, and the result keeps its segment the same
+# length and its motion physically plausible. Recovered samples are flagged
+# per frame. Set enabled: false to score only directly measured landmarks.
+pose_recovery:
+  enabled: true
+  anchor_visibility: 0.60
+  missing_visibility: 0.50
+  max_gap_sec: 0.40
+  max_segment_strain: 0.20
+  max_speed_m_per_s: 6.0
+  confidence_decay_per_sec: 0.5

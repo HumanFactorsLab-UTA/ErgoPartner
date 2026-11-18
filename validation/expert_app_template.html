@@ -1,0 +1,865 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#15181d; --muted:#5d6470; --line:#dfe3e9;
+    --accent:#2f5fd0; --accent-ink:#ffffff; --ok:#1a7f52; --warn:#9a6207; --bad:#b23125;
+    --chip:#eef1f6; --shadow:0 1px 2px rgba(16,20,28,.06),0 4px 14px rgba(16,20,28,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#12151a; --panel:#1a1e25; --ink:#e9ecf1; --muted:#9aa3b1; --line:#2b313b;
+      --accent:#6d95ee; --accent-ink:#0d1016; --ok:#4cc38a; --warn:#e0a33a; --bad:#ef6f61;
+      --chip:#232932; --shadow:0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  h1,h2,h3{line-height:1.25;margin:0 0 .5em}
+  h1{font-size:1.6rem} h2{font-size:1.15rem} h3{font-size:.95rem}
+  a{color:var(--accent)}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em}
+  kbd{background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .wrap{max-width:1560px;margin:0 auto;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+        padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+  .muted{color:var(--muted)}
+  .small{font-size:.875rem}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
+         background:var(--panel);color:var(--ink);padding:9px 16px}
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--panel);
+       border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+  textarea{resize:vertical;min-height:64px}
+
+  /* ---------- header ---------- */
+  header.bar{position:sticky;top:0;z-index:30;background:var(--panel);
+             border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+  .bar-in{max-width:1400px;margin:0 auto;padding:10px 16px;
+          display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .bar-in .grow{flex:1 1 auto}
+  .progress{height:6px;background:var(--chip);border-radius:99px;overflow:hidden;min-width:160px;flex:1 1 200px}
+  .progress > i{display:block;height:100%;background:var(--accent);transition:width .25s}
+  .badge{background:var(--chip);border-radius:99px;padding:3px 10px;font-size:.82rem;white-space:nowrap}
+
+  /* ---------- scoring layout ---------- */
+  .grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:16px;align-items:start}
+  @media (max-width:1000px){ .grid{grid-template-columns:1fr} }
+  .viewer{position:sticky;top:74px}
+  /* The composite is a wide three-panel strip, so at column width each view is small.
+     The wrapper crops to one panel on demand, which enlarges that view in place
+     instead of making the rater open the lightbox for every frame. */
+  .frameWrap{overflow:hidden;border-radius:10px;border:1px solid var(--line);background:#000}
+  .frameWrap img{display:block;height:auto;cursor:zoom-in;
+                 transition:width .18s ease,margin-left .18s ease}
+  .panelmarks{display:flex;gap:6px;margin-top:8px}
+  .panelmarks button{flex:1;text-align:center;font-size:.82rem;padding:5px 4px;
+                     background:var(--chip);border-color:transparent}
+  .panelmarks button.sel{background:var(--accent);color:var(--accent-ink);
+                         border-color:var(--accent);font-weight:600}
+
+  /* ---------- questions ---------- */
+  .q{border-top:1px solid var(--line);padding:14px 0}
+  .q:first-of-type{border-top:0}
+  .q > .qhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+  .qhead b{font-size:.95rem}
+  .opts{display:flex;flex-direction:column;gap:6px}
+  .opt{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);
+       border-radius:8px;padding:8px 11px;cursor:pointer;background:var(--panel)}
+  .opt:hover{border-color:var(--accent)}
+  .opt input{margin:3px 0 0 0;flex:0 0 auto}
+  .opt.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+  .mods{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .mod{display:flex;gap:7px;align-items:center;border:1px solid var(--line);
+       border-radius:99px;padding:5px 12px;cursor:pointer;font-size:.88rem}
+  .mod.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel))}
+  .derived{font-variant-numeric:tabular-nums;background:var(--chip);
+           border-radius:6px;padding:2px 9px;font-size:.85rem;white-space:nowrap}
+
+  /* ---------- score readout ---------- */
+  .scores{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:520px){ .scores{grid-template-columns:1fr} }
+  .scorebox{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel)}
+  .scorebox .total{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .kv{display:flex;justify-content:space-between;font-size:.85rem;padding:2px 0;color:var(--muted)}
+  .kv b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .given{border-left:3px solid var(--accent);background:var(--chip);
+         border-radius:0 8px 8px 0;padding:10px 12px;margin:10px 0;font-size:.88rem}
+
+  /* ---------- lightbox ---------- */
+  .lb{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:100;display:none;
+      align-items:center;justify-content:center;overflow:hidden}
+  .lb.on{display:flex}
+  .lb img{max-width:none;transform-origin:0 0;cursor:grab;image-rendering:auto}
+  .lb .lbbar{position:fixed;top:0;left:0;right:0;padding:10px 16px;display:flex;gap:10px;
+             align-items:center;background:linear-gradient(rgba(0,0,0,.75),transparent);color:#fff}
+  .lb .lbbar button{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)}
+
+  .hide{display:none !important}
+  .rowbtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  ul.tight{margin:.4em 0;padding-left:1.15em} ul.tight li{margin:.25em 0}
+  table.ref{border-collapse:collapse;width:100%;font-size:.86rem;margin:.5em 0}
+  table.ref th,table.ref td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+  table.ref th{background:var(--chip)}
+  .flag{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel));
+        border-radius:8px;padding:10px 12px;margin:10px 0}
+</style>
+
+<header class="bar" id="bar" hidden>
+  <div class="bar-in">
+    <strong id="itemLabel">Item 1</strong>
+    <div class="progress" title="Progress"><i id="bar1" style="width:0%"></i></div>
+    <span class="badge" id="doneBadge">0 scored</span>
+    <span class="badge" id="raterBadge"></span>
+    <span class="grow"></span>
+    <button id="btnSave">Save a copy</button>
+    <button id="btnFinishTop" class="primary">Finish &amp; export</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============================ WELCOME ============================ -->
+<section id="screenWelcome">
+  <div class="card">
+    <h1>{{TITLE}}</h1>
+    <p class="muted">{{SUBTITLE}}</p>
+
+    <h2>What we are asking you to do</h2>
+    <p>You will see <b id="nItems">—</b> images. Each one shows the <b>same instant</b> from three
+      synchronised cameras — front, side and isometric — placed side by side. For each image you
+      record what you observe about the worker's posture. Nothing is timed, and you can go back
+      and change any answer before you export.</p>
+
+    <h2>You record observations, not totals</h2>
+    <p>You will not be asked to add anything up or to read a REBA or RULA table. You select the
+      posture band you observe for each body segment, and this page composes the REBA and RULA
+      scores from your selections using <b>the same lookup tables as the system under test</b>.</p>
+    <p>This is deliberate, for two reasons:</p>
+    <ul class="tight">
+      <li><b>It removes clerical error.</b> Hand-composing a score through three lookup tables is a
+        well-known source of mistakes in reliability studies. A table slip would otherwise be
+        recorded as a genuine disagreement with the system.</li>
+      <li><b>It isolates what we are actually measuring.</b> Because both you and the system are
+        composed by identical code, any remaining difference comes from the postural judgement
+        itself — not from arithmetic, and not from a different version of a table.</li>
+    </ul>
+    <p>It also gives us more than a total would. Because your segment-level judgements are
+      recorded, we can see <i>which</i> body segment a disagreement lives in, rather than only
+      that the final numbers differed. A total cannot be taken apart again afterwards.</p>
+    <p>The composed scores are shown to you as you work, so you can sanity-check a result that
+      feels wrong. Enter what you observe first, then look.</p>
+
+    <h2>Fixed inputs — please do not estimate these</h2>
+    <div class="given">
+      <p style="margin:.2em 0"><b>Load, coupling and activity/muscle-use are given to you per image</b>
+        and are shown beside the questions. They are already fixed to the values the automated
+        system used.</p>
+      <p style="margin:.4em 0 .2em">Please score them <b>as stated</b>, even where your own judgement
+        of the scene would differ. Load and coupling cannot be read reliably from a still frame,
+        and activity and muscle use depend on what happens before and after the instant you are
+        shown. If you and the system assumed different loads, the comparison would measure that
+        disagreement instead of the postural one we are trying to study.</p>
+    </div>
+
+    <h2>Which side to score</h2>
+    <p>Score the <b>more severely loaded side</b> — the side you would report if you were assessing
+      this worker. If the two sides look equivalent, score either.</p>
+
+    <h2>If an image cannot be scored</h2>
+    <p>Some frames may be blurred, occluded, or caught mid-movement. Mark
+      <b>“I cannot score this frame”</b> and give a brief reason rather than guessing. That is a
+      result in itself and is more useful to us than a low-confidence score.</p>
+
+    <h2>Getting started</h2>
+    <p>Enter your rater ID below. It sets your personal image order — raters see the images in
+      different orders by design — and it labels your export.</p>
+    <div style="max-width:340px;margin:.6em 0">
+      <label for="raterId"><b>Rater ID</b></label>
+      <input type="text" id="raterId" placeholder="e.g. R01" autocomplete="off">
+      <p class="small muted" id="resumeNote"></p>
+    </div>
+    <div class="rowbtns">
+      <button class="primary" id="btnStart">Start</button>
+      <button id="btnRestore">Restore from a saved file</button>
+      <input type="file" id="fileRestore" accept="application/json" class="hide">
+    </div>
+    <p class="small muted" style="margin-top:1em">
+      Your answers are saved in this browser as you go. They are also downloadable at any time with
+      <b>Save a copy</b> — do that if you plan to finish on another machine. Nothing is transmitted
+      anywhere; this page works with no internet connection.</p>
+  </div>
+</section>
+
+<!-- ============================ SCORING ============================ -->
+<section id="screenScore" hidden>
+  <div class="grid">
+    <div>
+      <div class="card" style="padding:12px">
+        <div class="viewer">
+          <div class="frameWrap" id="frameWrap">
+            <img id="frameImg" alt="Three synchronised camera views of the worker" draggable="false">
+          </div>
+          <div class="panelmarks" id="panelBtns">
+            <button data-panel="-1" class="sel">All three</button>
+            <button data-panel="0">Front</button>
+            <button data-panel="1">Side</button>
+            <button data-panel="2">Isometric</button>
+          </div>
+          <p class="small muted" style="margin:.6em 0 0">Pick a view to enlarge it here, or
+            click the image for full-screen zoom and pan. <kbd>1</kbd>–<kbd>4</kbd> switch views.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="qhead" style="margin-bottom:12px">
+          <h2 style="margin:0">Observations</h2>
+          <span class="small muted" id="itemCounter"></span>
+        </div>
+        <div class="given" id="givenBox"></div>
+        <div id="questions"></div>
+
+        <div class="q">
+          <div class="qhead"><b>Confidence in this assessment</b></div>
+          <div class="opts" id="confOpts"></div>
+        </div>
+
+        <div class="q">
+          <div class="qhead"><b>Notes (optional)</b></div>
+          <textarea id="notes" placeholder="Anything that affected your judgement of this frame."></textarea>
+        </div>
+
+        <div class="q">
+          <label class="mod" id="cannotWrap" style="border-radius:8px">
+            <input type="checkbox" id="cannotScore">
+            <span>I cannot score this frame</span>
+          </label>
+          <div id="cannotReasonWrap" class="hide" style="margin-top:9px">
+            <input type="text" id="cannotReason" placeholder="Reason (e.g. torso occluded in all three views)">
+          </div>
+        </div>
+
+        <div class="rowbtns">
+          <button id="btnPrev">← Previous</button>
+          <button id="btnNext" class="primary">Next →</button>
+          <button id="btnClear">Clear this item</button>
+          <span class="grow"></span>
+        </div>
+        <p class="small muted" style="margin:.7em 0 0">
+          <kbd>←</kbd> <kbd>→</kbd> move between images.</p>
+      </div>
+
+      <div class="card">
+        <h2>Composed from your observations</h2>
+        <div class="scores">
+          <div class="scorebox">
+            <div class="kv"><span>REBA</span><span class="small muted" id="rebaRisk">—</span></div>
+            <div class="total" id="rebaTotal">—</div>
+            <div id="rebaBreak"></div>
+          </div>
+          <div class="scorebox">
+            <div class="kv"><span>RULA</span><span class="small muted" id="rulaRisk">—</span></div>
+            <div class="total" id="rulaTotal">—</div>
+            <div id="rulaBreak"></div>
+          </div>
+        </div>
+        <p class="small muted" style="margin:.8em 0 0">Shown for your own sanity-check. You are not
+          being asked to agree with it, and it is not the system's score.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ DONE ============================ -->
+<section id="screenDone" hidden>
+  <div class="card">
+    <h1>Thank you</h1>
+    <p id="doneSummary" class="muted"></p>
+    <div id="doneWarn"></div>
+    <h2>Export your ratings</h2>
+    <p>Download both files and return them to the study lead. The JSON is the complete record and
+      can be re-loaded into this page; the CSV is for analysis.</p>
+    <div class="rowbtns">
+      <button class="primary" id="btnJson">Download JSON</button>
+      <button class="primary" id="btnCsv">Download CSV</button>
+      <button id="btnBack">← Back to the images</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ REFERENCE ============================ -->
+<section id="screenRef" hidden></section>
+
+</div>
+
+<div class="lb" id="lightbox">
+  <div class="lbbar">
+    <button id="lbOut">−</button><button id="lbIn">+</button>
+    <button id="lbFit">Fit</button><span id="lbZoom" class="small"></span>
+    <span style="flex:1"></span>
+    <span class="small">Drag to pan · scroll to zoom · <kbd>Esc</kbd> to close</span>
+    <button id="lbClose">Close</button>
+  </div>
+  <img id="lbImg" alt="Enlarged view">
+</div>
+
+<script>
+"use strict";
+const ITEMS  = {{ITEMS_JSON}};
+const TABLES = {{TABLES_JSON}};
+const CONFIG = {{CONFIG_JSON}};
+
+/* ------------------------------------------------------------------ *
+ * Observation schema.
+ *
+ * Each body segment is asked about ONCE, in the terms an assessor would
+ * actually use.  REBA and RULA band the same joint differently, so the
+ * options below are the union of the two instruments' cut points and each
+ * instrument derives its own component score from the same answer.  Asking
+ * twice would invite a rater to answer inconsistently about one body.
+ * ------------------------------------------------------------------ */
+const QUESTIONS = [
+  { id:"trunk", label:"Trunk", help:"Flexion or extension of the trunk from upright.",
+    options:[
+      {v:"upright",     t:"Upright / neutral"},
+      {v:"flex_0_20",   t:"Flexed 0–20°"},
+      {v:"flex_20_60",  t:"Flexed 20–60°"},
+      {v:"flex_gt60",   t:"Flexed more than 60°"},
+      {v:"ext_0_20",    t:"Extended 0–20°"},
+      {v:"ext_gt20",    t:"Extended more than 20°"}],
+    mods:[{id:"trunk_twisted",t:"Twisted"},{id:"trunk_side_bent",t:"Side-bent"}] },
+
+  { id:"neck", label:"Neck", help:"Flexion of the neck; tick extension if the head is tipped back.",
+    options:[
+      {v:"flex_0_10",  t:"Flexed 0–10°"},
+      {v:"flex_10_20", t:"Flexed 10–20°"},
+      {v:"flex_gt20",  t:"Flexed more than 20°"},
+      {v:"ext",        t:"In extension"}],
+    mods:[{id:"neck_twisted",t:"Twisted"},{id:"neck_side_bent",t:"Side-bent"}] },
+
+  { id:"legs", label:"Legs", help:"Weight bearing and knee angle of the more loaded leg.",
+    options:[
+      {v:"bilateral", t:"Bilateral weight bearing, walking or sitting"},
+      {v:"unilateral",t:"Unilateral, weight on one leg, or unstable"}],
+    mods:[
+      {id:"seated",t:"Seated"},
+      {id:"legs_supported_balanced",t:"Supported and balanced"}],
+    extra:{ id:"knee", label:"Knee flexion", options:[
+      {v:"lt30",   t:"Less than 30°"},
+      {v:"k30_60", t:"30–60°"},
+      {v:"gt60",   t:"More than 60°"}]} },
+
+  { id:"upper_arm", label:"Upper arm", help:"Shoulder flexion of the more loaded arm.",
+    options:[
+      {v:"n20_20",  t:"20° extension to 20° flexion"},
+      {v:"mid",     t:"More than 20° extension, or 20–45° flexion"},
+      {v:"f45_90",  t:"Flexed 45–90°"},
+      {v:"f_gt90",  t:"Flexed more than 90°"}],
+    mods:[
+      {id:"arm_abducted",  t:"Abducted or rotated"},
+      {id:"shoulder_raised",t:"Shoulder raised"},
+      {id:"arm_supported", t:"Supported or gravity-assisted"}] },
+
+  { id:"lower_arm", label:"Lower arm", help:"Elbow flexion of the same arm.",
+    options:[
+      {v:"f60_100", t:"Flexed 60–100°"},
+      {v:"outside", t:"Flexed less than 60° or more than 100°"}],
+    mods:[{id:"lower_arm_across",t:"Across midline or out to the side"}] },
+
+  { id:"wrist", label:"Wrist", help:"Wrist flexion or extension of the same arm.",
+    options:[
+      {v:"neutral", t:"Neutral"},
+      {v:"le15",    t:"Flexed or extended up to 15°"},
+      {v:"gt15",    t:"Flexed or extended more than 15°"}],
+    mods:[
+      {id:"wrist_deviated",t:"Deviated or bent from midline"},
+      {id:"wrist_twist_end",t:"Twisted at or near end of range"}] },
+];
+
+const CONFIDENCE = [
+  {v:"5",t:"Very confident"},{v:"4",t:"Confident"},{v:"3",t:"Moderate"},
+  {v:"2",t:"Low"},{v:"1",t:"Very low"}];
+
+/* ---------- component derivation: mirrors ergonomics/reba.py & rula.py ---------- */
+const clamp = (v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+
+function rebaTrunk(a){
+  const base={upright:1,flex_0_20:2,ext_0_20:2,flex_20_60:3,ext_gt20:3,flex_gt60:4}[a.trunk];
+  if(base===undefined) return null;
+  return Math.min(5, base + ((a.trunk_twisted||a.trunk_side_bent)?1:0));
+}
+function rulaTrunk(a){
+  // RULA 1993 defines no trunk-extension bin; the pipeline treats it as unscorable.
+  if(a.trunk==="ext_0_20"||a.trunk==="ext_gt20") return null;
+  const base={upright:1,flex_0_20:2,flex_20_60:3,flex_gt60:4}[a.trunk];
+  if(base===undefined) return null;
+  return Math.min(6, base + (a.trunk_twisted?1:0) + (a.trunk_side_bent?1:0));
+}
+function rebaNeck(a){
+  const base={flex_0_10:1,flex_10_20:1,flex_gt20:2,ext:2}[a.neck];
+  if(base===undefined) return null;
+  return Math.min(3, base + ((a.neck_twisted||a.neck_side_bent)?1:0));
+}
+function rulaNeck(a){
+  const base={flex_0_10:1,flex_10_20:2,flex_gt20:3,ext:4}[a.neck];
+  if(base===undefined) return null;
+  return Math.min(6, base + (a.neck_twisted?1:0) + (a.neck_side_bent?1:0));
+}
+function rebaLegs(a){
+  if(a.legs===undefined||a.legs===null) return null;
+  let s = (a.legs==="bilateral")?1:2;
+  if(!a.seated){
+    if(a.knee==="k30_60") s+=1;
+    else if(a.knee==="gt60") s+=2;
+    else if(a.knee===undefined) return null;
+  }
+  return Math.min(4,s);
+}
+const rulaLegs = a => (a.legs===undefined||a.legs===null) ? null : (a.legs_supported_balanced?1:2);
+
+function armBase(a){ return {n20_20:1,mid:2,f45_90:3,f_gt90:4}[a.upper_arm]; }
+function upperArm(a){
+  const base=armBase(a); if(base===undefined) return null;
+  return clamp(base + (a.arm_abducted?1:0) + (a.shoulder_raised?1:0) - (a.arm_supported?1:0), 1, 6);
+}
+function rebaLowerArm(a){
+  const b={f60_100:1,outside:2}[a.lower_arm]; return b===undefined?null:b;
+}
+function rulaLowerArm(a){
+  const b={f60_100:1,outside:2}[a.lower_arm];
+  return b===undefined?null:Math.min(3, b + (a.lower_arm_across?1:0));
+}
+function rebaWrist(a){
+  const b={neutral:1,le15:1,gt15:2}[a.wrist];
+  return b===undefined?null:Math.min(3, b + ((a.wrist_deviated||a.wrist_twist_end)?1:0));
+}
+function rulaWrist(a){
+  const b={neutral:1,le15:2,gt15:3}[a.wrist];
+  return b===undefined?null:Math.min(4, b + (a.wrist_deviated?1:0));
+}
+const rulaWristTwist = a => a.wrist_twist_end?2:1;
+
+/* ---------- composition: identical structure to the Python calculators ---------- */
+function computeReba(a, given){
+  const c={trunk:rebaTrunk(a),neck:rebaNeck(a),legs:rebaLegs(a),
+           upper_arm:upperArm(a),lower_arm:rebaLowerArm(a),wrist:rebaWrist(a)};
+  if(Object.values(c).some(v=>v===null)) return {components:c,final:null};
+  const tableA=TABLES.reba.a[c.trunk-1][c.neck-1][c.legs-1];
+  const scoreA=tableA+given.reba_load_force;
+  const tableB=TABLES.reba.b[c.upper_arm-1][c.lower_arm-1][c.wrist-1];
+  const scoreB=tableB+given.reba_coupling;
+  const tableC=TABLES.reba.c[clamp(scoreA,1,12)-1][clamp(scoreB,1,12)-1];
+  const final=clamp(tableC+given.reba_activity,1,15);
+  return {components:c,table_a:tableA,score_a:scoreA,table_b:tableB,score_b:scoreB,
+          table_c:tableC,final:final,risk:TABLES.reba.risk[final]||""};
+}
+function computeRula(a, given){
+  const c={upper_arm:upperArm(a),lower_arm:rulaLowerArm(a),wrist:rulaWrist(a),
+           wrist_twist:rulaWristTwist(a),neck:rulaNeck(a),trunk:rulaTrunk(a),legs:rulaLegs(a)};
+  if(Object.values(c).some(v=>v===null)) return {components:c,final:null};
+  const tableA=TABLES.rula.a[c.upper_arm-1][c.lower_arm-1][c.wrist-1][c.wrist_twist-1];
+  const scoreA=tableA+given.rula_muscle_use+given.rula_force_load;
+  const tableB=TABLES.rula.b[c.neck-1][c.trunk-1][c.legs-1];
+  const scoreB=tableB+given.rula_muscle_use+given.rula_force_load;
+  const final=TABLES.rula.c[Math.min(scoreA,8)-1][Math.min(scoreB,7)-1];
+  return {components:c,table_a:tableA,score_a:scoreA,table_b:tableB,score_b:scoreB,
+          final:final,risk:TABLES.rula.risk[final]||""};
+}
+
+/* ---------- deterministic per-rater order (mulberry32 on a string hash) ---------- */
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function orderFor(raterId){
+  // By default every reviewer sees the images in the same order, so image 12 is the
+  // same frame for everyone and the study is easy to audit. Ratings are joined back on
+  // the frame id rather than on position, so this changes nothing in the analysis.
+  if(!CONFIG.randomise_order) return ITEMS.map((_,i)=>i);
+  const r=rng(hashStr(String(raterId).trim().toUpperCase()||"ANON")^CONFIG.order_salt);
+  const idx=ITEMS.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+
+  // Push each repeated frame away from its original.  This has to happen here rather
+  // than when the package is built: every rater is dealt their own permutation, so a
+  // separation imposed on the build-time order would not survive the shuffle.  A
+  // repeat seen a few images after the original is answered from memory, which would
+  // inflate the within-rater consistency it exists to measure.
+  const minSep=CONFIG.min_repeat_separation||12;
+  for(let pass=0;pass<500;pass++){
+    const at={}; idx.forEach((item,p)=>{at[ITEMS[item].key]=p;});
+    let bad=-1;
+    for(let p=0;p<idx.length;p++){
+      const it=ITEMS[idx[p]];
+      if(it.repeat_of!==undefined && Math.abs(p-at[it.repeat_of])<minSep){bad=p;break;}
+    }
+    if(bad<0) break;
+    const target=Math.floor(r()*idx.length);
+    [idx[bad],idx[target]]=[idx[target],idx[bad]];
+  }
+  return idx;
+}
+
+/* ---------- state ---------- */
+const $=s=>document.querySelector(s);
+let rater="", order=[], pos=0, answers={};
+
+const storeKey = ()=>"expertRatings::"+CONFIG.study_id+"::"+rater;
+function save(){ try{ localStorage.setItem(storeKey(), JSON.stringify(
+    {rater,answers,pos,version:CONFIG.package_version,saved_at:new Date().toISOString()})); }catch(e){} }
+function load(){ try{ const raw=localStorage.getItem(storeKey()); if(!raw) return false;
+    const d=JSON.parse(raw); answers=d.answers||{}; pos=d.pos||0; return true; }catch(e){ return false; } }
+
+const cur = ()=>ITEMS[order[pos]];
+const ansFor = key => (answers[key] ||= {obs:{},confidence:null,notes:"",cannot:false,reason:""});
+
+/* ---------- rendering ---------- */
+function optionRow(name,value,text,checked,onpick){
+  const l=document.createElement("label"); l.className="opt"+(checked?" sel":"");
+  const i=document.createElement("input"); i.type="radio"; i.name=name; i.value=value; i.checked=checked;
+  i.addEventListener("change",()=>onpick(value));
+  const s=document.createElement("span"); s.textContent=text;
+  l.append(i,s); return l;
+}
+function modChip(text,checked,onpick){
+  const l=document.createElement("label"); l.className="mod"+(checked?" sel":"");
+  const i=document.createElement("input"); i.type="checkbox"; i.checked=checked;
+  i.addEventListener("change",()=>onpick(i.checked));
+  const s=document.createElement("span"); s.textContent=text;
+  l.append(i,s); return l;
+}
+
+function renderQuestions(){
+  const item=cur(), a=ansFor(item.key), host=$("#questions");
+  host.innerHTML="";
+  const disabled=a.cannot;
+
+  QUESTIONS.forEach(q=>{
+    const wrap=document.createElement("div"); wrap.className="q";
+    const head=document.createElement("div"); head.className="qhead";
+    const b=document.createElement("b"); b.textContent=q.label;
+    const d=document.createElement("span"); d.className="derived"; d.id="drv_"+q.id;
+    head.append(b,d); wrap.append(head);
+    const help=document.createElement("div"); help.className="small muted"; help.textContent=q.help;
+    help.style.margin="-4px 0 8px"; wrap.append(help);
+
+    const opts=document.createElement("div"); opts.className="opts";
+    q.options.forEach(o=>opts.append(optionRow(q.id,o.v,o.t,a.obs[q.id]===o.v,
+      v=>{a.obs[q.id]=v; touch();})));
+    wrap.append(opts);
+
+    if(q.extra){
+      const sub=document.createElement("div"); sub.style.marginTop="10px";
+      const lab=document.createElement("div"); lab.className="small"; lab.style.marginBottom="6px";
+      lab.innerHTML="<b>"+q.extra.label+"</b>"; sub.append(lab);
+      const so=document.createElement("div"); so.className="opts";
+      q.extra.options.forEach(o=>so.append(optionRow(q.extra.id,o.v,o.t,a.obs[q.extra.id]===o.v,
+        v=>{a.obs[q.extra.id]=v; touch();})));
+      sub.append(so); wrap.append(sub);
+    }
+    if(q.mods&&q.mods.length){
+      const mods=document.createElement("div"); mods.className="mods";
+      q.mods.forEach(m=>mods.append(modChip(m.t,!!a.obs[m.id],v=>{a.obs[m.id]=v; touch();})));
+      wrap.append(mods);
+    }
+    host.append(wrap);
+  });
+
+  const conf=$("#confOpts"); conf.innerHTML="";
+  CONFIDENCE.forEach(c=>conf.append(optionRow("conf",c.v,c.t,a.confidence===c.v,
+    v=>{a.confidence=v; touch();})));
+
+  $("#notes").value=a.notes||"";
+  $("#cannotScore").checked=!!a.cannot;
+  $("#cannotReason").value=a.reason||"";
+  $("#cannotReasonWrap").classList.toggle("hide",!a.cannot);
+  host.querySelectorAll("input").forEach(i=>i.disabled=disabled);
+  $("#confOpts").querySelectorAll("input").forEach(i=>i.disabled=disabled);
+  $("#notes").disabled=false;
+}
+
+function renderGiven(){
+  const g=cur().given;
+  $("#givenBox").innerHTML =
+    "<b>Given for this image — score as stated</b><table class='ref'>"+
+    "<tr><th>Handled load</th><td>"+g.load_label+"</td>"+
+        "<th>Coupling</th><td>"+g.coupling_label+"</td></tr>"+
+    "<tr><th>REBA activity score</th><td>+"+g.reba_activity+"</td>"+
+        "<th>RULA muscle use / force</th><td>+"+g.rula_muscle_use+" / +"+g.rula_force_load+"</td></tr>"+
+    "</table>";
+}
+
+function renderScores(){
+  const item=cur(), a=ansFor(item.key);
+  const reba=computeReba(a.obs,item.given), rula=computeRula(a.obs,item.given);
+
+  QUESTIONS.forEach(q=>{
+    const el=document.getElementById("drv_"+q.id); if(!el) return;
+    const rb=reba.components[q.id], rl=rula.components[q.id];
+    const bits=[]; if(rb!=null) bits.push("REBA "+rb);
+    if(rl!=null&&q.id!=="legs") bits.push("RULA "+rl); else if(rl!=null) bits.push("RULA "+rl);
+    el.textContent=bits.length?bits.join(" · "):"—";
+  });
+
+  $("#rebaTotal").textContent = reba.final ?? "—";
+  $("#rebaRisk").textContent  = reba.final ? reba.risk : "incomplete";
+  $("#rebaBreak").innerHTML = reba.final
+    ? ["trunk","neck","legs","upper_arm","lower_arm","wrist"].map(k=>
+        "<div class='kv'><span>"+k.replace("_"," ")+"</span><b>"+reba.components[k]+"</b></div>").join("")
+      + "<div class='kv'><span>score A / B</span><b>"+reba.score_a+" / "+reba.score_b+"</b></div>"
+    : "<div class='small muted'>Answer every segment to compose a score.</div>";
+
+  const rulaBlocked = (a.obs.trunk==="ext_0_20"||a.obs.trunk==="ext_gt20");
+  $("#rulaTotal").textContent = rula.final ?? "—";
+  $("#rulaRisk").textContent  = rula.final ? rula.risk : (rulaBlocked?"not defined":"incomplete");
+  $("#rulaBreak").innerHTML = rula.final
+    ? ["upper_arm","lower_arm","wrist","wrist_twist","neck","trunk","legs"].map(k=>
+        "<div class='kv'><span>"+k.replace("_"," ")+"</span><b>"+rula.components[k]+"</b></div>").join("")
+      + "<div class='kv'><span>score A / B</span><b>"+rula.score_a+" / "+rula.score_b+"</b></div>"
+    : rulaBlocked
+      ? "<div class='small muted'>RULA defines no trunk-extension score, so no RULA total is produced for this posture. Your REBA answer is unaffected.</div>"
+      : "<div class='small muted'>Answer every segment to compose a score.</div>";
+}
+
+function isComplete(key){
+  const a=answers[key]; if(!a) return false;
+  if(a.cannot) return !!(a.reason||"").trim();
+  const needed=QUESTIONS.map(q=>q.id).concat(["knee"]);
+  for(const id of needed){
+    if(id==="knee" && a.obs.seated) continue;
+    if(a.obs[id]===undefined||a.obs[id]===null) return false;
+  }
+  return !!a.confidence;
+}
+function completedCount(){ return ITEMS.filter(i=>isComplete(i.key)).length; }
+
+function renderChrome(){
+  const n=ITEMS.length, done=completedCount();
+  $("#itemLabel").textContent="Image "+(pos+1)+" of "+n;
+  $("#itemCounter").textContent=(isComplete(cur().key)?"complete":"not yet complete");
+  $("#bar1").style.width=(100*done/n)+"%";
+  $("#doneBadge").textContent=done+" of "+n+" scored";
+  $("#raterBadge").textContent="Rater "+rater;
+  $("#btnPrev").disabled=(pos===0);
+  $("#btnNext").textContent = (pos===n-1) ? "Finish →" : "Next →";
+}
+
+/* Which camera panel is enlarged; -1 shows the whole strip.  Kept across images so a
+   rater who prefers to work from the side view is not reset on every frame. */
+let panelFocus=-1;
+function applyPanelFocus(){
+  const img=$("#frameImg"), wrap=$("#frameWrap"), item=cur();
+  const bounds=item.panels;
+  $("#panelBtns").querySelectorAll("button").forEach(b=>
+    b.classList.toggle("sel", Number(b.dataset.panel)===panelFocus));
+  if(panelFocus<0 || !bounds || !bounds[panelFocus]){
+    img.style.width="100%"; img.style.marginLeft="0";
+    return;
+  }
+  // bounds are fractions of the composite width, measured when it was written, so
+  // panels of differing aspect ratio crop correctly.
+  const [a,b]=bounds[panelFocus];
+  const span=Math.max(1e-6,b-a);
+  img.style.width=(100/span)+"%";
+  img.style.marginLeft=(-100*a/span)+"%";
+}
+function render(){
+  const item=cur();
+  const img=$("#frameImg");
+  img.src=CONFIG.images_dir+"/"+item.image;
+  img.alt="Three synchronised camera views, image "+(pos+1)+" of "+ITEMS.length;
+  applyPanelFocus();
+  renderGiven(); renderQuestions(); renderScores(); renderChrome();
+  window.scrollTo({top:0,behavior:"instant"});
+}
+function touch(){ save(); renderQuestions(); renderScores(); renderChrome(); }
+
+/* ---------- navigation ---------- */
+function go(delta){
+  const n=ITEMS.length;
+  if(pos+delta<0) return;
+  if(pos+delta>=n){ finish(); return; }
+  pos+=delta; save(); render();
+}
+function finish(){
+  $("#screenScore").hidden=true; $("#screenDone").hidden=false; $("#bar").hidden=true;
+  const done=completedCount(), n=ITEMS.length;
+  $("#doneSummary").textContent="You have scored "+done+" of "+n+" images as rater "+rater+".";
+  const missing=ITEMS.map((it,i)=>({it,i})).filter(x=>!isComplete(x.it.key));
+  $("#doneWarn").innerHTML = missing.length
+    ? "<div class='flag'><b>"+missing.length+" image(s) are not yet complete.</b> You can still export, "+
+      "but please go back and finish them if you can.</div>"
+    : "";
+}
+
+/* ---------- export ---------- */
+//: Every modifier a rater can tick.  Unticked boxes are absent from the answer object,
+//: which would export as an empty cell indistinguishable from "not answered"; they are
+//: filled in as false so the exported record says what was actually observed.
+const MODIFIER_KEYS=["trunk_twisted","trunk_side_bent","neck_twisted","neck_side_bent",
+  "seated","legs_supported_balanced","arm_abducted","shoulder_raised","arm_supported",
+  "lower_arm_across","wrist_deviated","wrist_twist_end"];
+function normaliseObs(obs,answered){
+  const out={...obs};
+  if(answered) MODIFIER_KEYS.forEach(k=>{ if(out[k]===undefined) out[k]=false; });
+  return out;
+}
+
+function record(item){
+  const a=answers[item.key]||{obs:{},confidence:null,notes:"",cannot:false,reason:""};
+  const reba=computeReba(a.obs,item.given), rula=computeRula(a.obs,item.given);
+  return {
+    rater_id:rater, presentation_index:order.indexOf(ITEMS.indexOf(item))+1,
+    item_key:item.key, frame_id:item.frame_id, repeat_of:item.repeat_of||"",
+    is_repeat:!!item.repeat_of, image:item.image,
+    cannot_score:!!a.cannot, cannot_reason:a.reason||"",
+    confidence:a.confidence||"", notes:a.notes||"",
+    observations:normaliseObs(a.obs, Object.keys(a.obs).length>0),
+    expert_reba_final:reba.final, expert_reba:reba.components,
+    expert_rula_final:rula.final, expert_rula:rula.components,
+    given:item.given, complete:isComplete(item.key)
+  };
+}
+function allRecords(){
+  return order.map(i=>ITEMS[i]).map(record).sort((x,y)=>x.presentation_index-y.presentation_index);
+}
+function download(name,text,mime){
+  const b=new Blob([text],{type:mime}), u=URL.createObjectURL(b);
+  const a=document.createElement("a"); a.href=u; a.download=name; document.body.append(a); a.click();
+  a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+function exportJson(){
+  download(CONFIG.study_id+"_ratings_"+rater+".json", JSON.stringify(
+    {study_id:CONFIG.study_id,package_version:CONFIG.package_version,rater_id:rater,
+     exported_at:new Date().toISOString(),ratings:allRecords()},null,2), "application/json");
+}
+function exportCsv(){
+  const obsKeys=["trunk","trunk_twisted","trunk_side_bent","neck","neck_twisted","neck_side_bent",
+    "legs","seated","legs_supported_balanced","knee","upper_arm","arm_abducted","shoulder_raised",
+    "arm_supported","lower_arm","lower_arm_across","wrist","wrist_deviated","wrist_twist_end"];
+  const rebaKeys=["trunk","neck","legs","upper_arm","lower_arm","wrist"];
+  const rulaKeys=["upper_arm","lower_arm","wrist","wrist_twist","neck","trunk","legs"];
+  const head=["rater_id","presentation_index","item_key","frame_id","is_repeat","repeat_of",
+    "cannot_score","cannot_reason","confidence","complete",
+    "expert_reba_final","expert_rula_final",
+    ...rebaKeys.map(k=>"expert_reba_"+k), ...rulaKeys.map(k=>"expert_rula_"+k),
+    ...obsKeys.map(k=>"obs_"+k),
+    "given_reba_load_force","given_reba_coupling","given_reba_activity",
+    "given_rula_force_load","given_rula_muscle_use","notes"];
+  const esc=v=>{ if(v===null||v===undefined) return "";
+    const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+  const rows=allRecords().map(r=>[
+    r.rater_id,r.presentation_index,r.item_key,r.frame_id,r.is_repeat,r.repeat_of,
+    r.cannot_score,r.cannot_reason,r.confidence,r.complete,
+    r.expert_reba_final,r.expert_rula_final,
+    ...rebaKeys.map(k=>r.expert_reba[k]), ...rulaKeys.map(k=>r.expert_rula[k]),
+    ...obsKeys.map(k=>r.observations[k]),
+    r.given.reba_load_force,r.given.reba_coupling,r.given.reba_activity,
+    r.given.rula_force_load,r.given.rula_muscle_use,r.notes
+  ].map(esc).join(","));
+  download(CONFIG.study_id+"_ratings_"+rater+".csv",[head.join(","),...rows].join("\r\n"),"text/csv");
+}
+
+/* ---------- lightbox ---------- */
+let lbScale=1, lbX=0, lbY=0, dragging=false, dragSX=0, dragSY=0;
+function lbApply(){ const i=$("#lbImg");
+  i.style.transform="translate("+lbX+"px,"+lbY+"px) scale("+lbScale+")";
+  $("#lbZoom").textContent=Math.round(lbScale*100)+"%"; }
+function lbFit(){ const i=$("#lbImg");
+  const s=Math.min(window.innerWidth/i.naturalWidth, (window.innerHeight-52)/i.naturalHeight);
+  lbScale=s>0?s:1; lbX=(window.innerWidth-i.naturalWidth*lbScale)/2;
+  lbY=(window.innerHeight-i.naturalHeight*lbScale)/2+20; lbApply(); }
+function lbOpen(){ const i=$("#lbImg"); i.src=$("#frameImg").src;
+  $("#lightbox").classList.add("on");
+  if(i.complete) lbFit(); else i.onload=lbFit; }
+function lbClose(){ $("#lightbox").classList.remove("on"); }
+function lbZoomBy(f,cx,cy){
+  const nx=cx-(cx-lbX)*f, ny=cy-(cy-lbY)*f;
+  lbScale=clamp(lbScale*f,0.05,12); lbX=nx; lbY=ny; lbApply();
+}
+
+/* ---------- wiring ---------- */
+function startSession(){
+  const id=$("#raterId").value.trim();
+  if(!id){ $("#raterId").focus(); return; }
+  rater=id; order=orderFor(rater); load();
+  if(pos>=ITEMS.length) pos=ITEMS.length-1;
+  $("#screenWelcome").hidden=true; $("#screenScore").hidden=false; $("#bar").hidden=false;
+  render();
+}
+document.addEventListener("DOMContentLoaded",()=>{
+  $("#nItems").textContent=ITEMS.length;
+  $("#btnStart").addEventListener("click",startSession);
+  $("#raterId").addEventListener("keydown",e=>{ if(e.key==="Enter") startSession(); });
+  $("#raterId").addEventListener("input",()=>{
+    const id=$("#raterId").value.trim(); if(!id){ $("#resumeNote").textContent=""; return; }
+    const raw=localStorage.getItem("expertRatings::"+CONFIG.study_id+"::"+id);
+    $("#resumeNote").textContent = raw ? "Saved progress found for this ID — it will be resumed." : "";
+  });
+
+  $("#btnPrev").addEventListener("click",()=>go(-1));
+  $("#btnNext").addEventListener("click",()=>go(1));
+  $("#btnClear").addEventListener("click",()=>{ delete answers[cur().key]; save(); render(); });
+  $("#notes").addEventListener("input",e=>{ ansFor(cur().key).notes=e.target.value; save(); renderChrome(); });
+  $("#cannotScore").addEventListener("change",e=>{
+    const a=ansFor(cur().key); a.cannot=e.target.checked; touch();
+    $("#cannotReasonWrap").classList.toggle("hide",!a.cannot); });
+  $("#cannotReason").addEventListener("input",e=>{
+    ansFor(cur().key).reason=e.target.value; save(); renderChrome(); });
+
+  $("#btnFinishTop").addEventListener("click",finish);
+  $("#btnBack").addEventListener("click",()=>{
+    $("#screenDone").hidden=true; $("#screenScore").hidden=false; $("#bar").hidden=false; render(); });
+  $("#btnJson").addEventListener("click",exportJson);
+  $("#btnCsv").addEventListener("click",exportCsv);
+  $("#btnSave").addEventListener("click",exportJson);
+
+  $("#btnRestore").addEventListener("click",()=>$("#fileRestore").click());
+  $("#fileRestore").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ try{
+        const d=JSON.parse(r.result);
+        rater=d.rater_id||$("#raterId").value.trim()||"RESTORED";
+        answers={}; (d.ratings||[]).forEach(x=>{ answers[x.item_key]={
+          obs:x.observations||{},confidence:x.confidence||null,notes:x.notes||"",
+          cannot:!!x.cannot_score,reason:x.cannot_reason||""}; });
+        $("#raterId").value=rater; order=orderFor(rater); pos=0; save(); startSession();
+      }catch(err){ alert("That file could not be read as a ratings export."); } };
+    r.readAsText(f); });
+
+  $("#panelBtns").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    panelFocus=Number(b.dataset.panel); applyPanelFocus(); });
+  $("#frameImg").addEventListener("click",lbOpen);
+  $("#lbClose").addEventListener("click",lbClose);
+  $("#lbFit").addEventListener("click",lbFit);
+  $("#lbIn").addEventListener("click",()=>lbZoomBy(1.25,window.innerWidth/2,window.innerHeight/2));
+  $("#lbOut").addEventListener("click",()=>lbZoomBy(0.8,window.innerWidth/2,window.innerHeight/2));
+  $("#lightbox").addEventListener("wheel",e=>{ e.preventDefault();
+    lbZoomBy(e.deltaY<0?1.12:0.89, e.clientX, e.clientY); },{passive:false});
+  $("#lbImg").addEventListener("pointerdown",e=>{ dragging=true; dragSX=e.clientX-lbX; dragSY=e.clientY-lbY;
+    $("#lbImg").setPointerCapture(e.pointerId); $("#lbImg").style.cursor="grabbing"; });
+  $("#lbImg").addEventListener("pointermove",e=>{ if(!dragging) return;
+    lbX=e.clientX-dragSX; lbY=e.clientY-dragSY; lbApply(); });
+  $("#lbImg").addEventListener("pointerup",e=>{ dragging=false; $("#lbImg").style.cursor="grab"; });
+
+  document.addEventListener("keydown",e=>{
+    if($("#lightbox").classList.contains("on")){ if(e.key==="Escape") lbClose(); return; }
+    if($("#screenScore").hidden) return;
+    const t=e.target.tagName;
+    if(t==="INPUT"&&e.target.type==="text") return;
+    if(t==="TEXTAREA") return;
+    if(e.key==="ArrowRight"){ e.preventDefault(); go(1); }
+    if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); }
+    if(e.key>="1"&&e.key<="4"){ e.preventDefault();
+      panelFocus=Number(e.key)-2; applyPanelFocus(); }
+  });
+  window.addEventListener("beforeunload",save);
+});
+</script>
